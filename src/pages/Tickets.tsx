@@ -23,10 +23,15 @@ const Tickets = () => {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("medium");
   const [category, setCategory] = useState("");
+  const [branch, setBranch] = useState("");
+  const [faultType, setFaultType] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [errorCode, setErrorCode] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [ticketToDelete, setTicketToDelete] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -85,14 +90,20 @@ const Tickets = () => {
       return;
     }
 
-    const { error } = await supabase.from("tickets").insert([{
+    setIsSubmitting(true);
+
+    const { data: ticketData, error } = await supabase.from("tickets").insert([{
       title,
       description,
       priority: priority as any,
       category: category || null,
+      branch: branch || null,
+      fault_type: faultType || null,
+      user_email: userEmail || null,
+      error_code: errorCode || null,
       created_by: currentUserId,
       status: "open" as any,
-    }]);
+    }]).select().single();
 
     if (error) {
       toast({
@@ -100,18 +111,47 @@ const Tickets = () => {
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Success",
-        description: "Ticket created successfully",
-      });
-      setOpen(false);
-      setTitle("");
-      setDescription("");
-      setPriority("medium");
-      setCategory("");
-      fetchTickets();
+      setIsSubmitting(false);
+      return;
     }
+
+    // Route email if ticket created successfully
+    if (ticketData) {
+      try {
+        await supabase.functions.invoke("route-ticket-email", {
+          body: {
+            ticketId: ticketData.id,
+            title,
+            description,
+            faultType,
+            branch,
+            userEmail,
+            errorCode,
+            priority,
+          },
+        });
+      } catch (emailError) {
+        console.error("Email routing error:", emailError);
+        // Don't fail the ticket creation if email fails
+      }
+    }
+
+    toast({
+      title: "Success",
+      description: "Ticket created successfully",
+    });
+    
+    setOpen(false);
+    setTitle("");
+    setDescription("");
+    setPriority("medium");
+    setCategory("");
+    setBranch("");
+    setFaultType("");
+    setUserEmail("");
+    setErrorCode("");
+    setIsSubmitting(false);
+    fetchTickets();
   };
 
   const handleCloseTicket = async (ticketId: string) => {
@@ -212,25 +252,82 @@ const Tickets = () => {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
+                  <Label htmlFor="userEmail">Your Email</Label>
+                  <Input
+                    id="userEmail"
+                    type="email"
+                    value={userEmail}
+                    onChange={(e) => setUserEmail(e.target.value)}
+                    placeholder="your.email@oricol.co.za"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="branch">Branch</Label>
+                  <Select value={branch} onValueChange={setBranch} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select branch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DBN">Durban (DBN)</SelectItem>
+                      <SelectItem value="CPT">Cape Town (CPT)</SelectItem>
+                      <SelectItem value="PE">Port Elizabeth (PE)</SelectItem>
+                      <SelectItem value="JHB">Johannesburg (JHB)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="faultType">Fault Type</Label>
+                  <Select value={faultType} onValueChange={setFaultType} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select fault type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="RDP">RDP Server</SelectItem>
+                      <SelectItem value="CDrive">C Drive (My PC)</SelectItem>
+                      <SelectItem value="VPN">VPN</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="title">Fault Title</Label>
                   <Input
                     id="title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Brief description of the issue"
                     required
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">Fault Description / Error Message</Label>
                   <Textarea
                     id="description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe the issue in detail or paste any error messages"
                     rows={4}
+                    required
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
+                  <Label htmlFor="errorCode">Error Code (Optional)</Label>
+                  <Input
+                    id="errorCode"
+                    value={errorCode}
+                    onChange={(e) => setErrorCode(e.target.value)}
+                    placeholder="e.g., 0x80070005"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category (Optional)</Label>
                   <Input
                     id="category"
                     value={category}
@@ -238,6 +335,7 @@ const Tickets = () => {
                     placeholder="e.g., Hardware, Software, Network"
                   />
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="priority">Priority</Label>
                   <Select value={priority} onValueChange={setPriority}>
@@ -252,7 +350,10 @@ const Tickets = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button type="submit" className="w-full">Create Ticket</Button>
+
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? "Creating..." : "Create Ticket"}
+                </Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -275,12 +376,27 @@ const Tickets = () => {
                     <div className="flex-1">
                       <h3 className="font-medium">{ticket.title}</h3>
                       <p className="text-sm text-muted-foreground mt-1">{ticket.description}</p>
-                      <div className="flex gap-2 mt-2">
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {ticket.branch && (
+                          <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+                            📍 {ticket.branch}
+                          </Badge>
+                        )}
+                        {ticket.fault_type && (
+                          <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                            🔧 {ticket.fault_type}
+                          </Badge>
+                        )}
                         {ticket.category && (
                           <Badge variant="secondary">{ticket.category}</Badge>
                         )}
+                        {ticket.user_email && (
+                          <span className="text-xs text-muted-foreground">
+                            👤 {ticket.user_email}
+                          </span>
+                        )}
                         <span className="text-xs text-muted-foreground">
-                          {new Date(ticket.created_at).toLocaleDateString()}
+                          📅 {new Date(ticket.created_at).toLocaleDateString()}
                         </span>
                       </div>
                     </div>

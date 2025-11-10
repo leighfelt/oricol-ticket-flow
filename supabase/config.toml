@@ -1,1 +1,4 @@
 project_id = "kwmeqvrmtivmljujwocp"
+
+[functions.route-ticket-email]
+verify_jwt = false
