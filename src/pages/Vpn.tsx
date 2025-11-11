@@ -427,7 +427,11 @@ const Vpn = () => {
                 <DialogHeader>
                   <DialogTitle>Import VPN Credentials from CSV</DialogTitle>
                   <DialogDescription>
-                    Upload a CSV file with columns: username, password, service_type, email, notes
+                    Upload a CSV file with either format:
+                    <br />• 4 columns: username, password, email, notes
+                    <br />• 5 columns: username, password, service_type, email, notes
+                    <br />
+                    <span className="text-xs text-muted-foreground">First row can be a header (will be auto-detected)</span>
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
