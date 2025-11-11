@@ -500,6 +500,39 @@ export type Database = {
         }
         Relationships: []
       }
+      vpn_rdp_credentials: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          notes: string | null
+          password: string
+          service_type: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          notes?: string | null
+          password: string
+          service_type: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          notes?: string | null
+          password?: string
+          service_type?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

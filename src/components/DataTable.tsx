@@ -195,4 +195,6 @@ export function DataTable<T extends Record<string, any>>({
       </div>
     </div>
   );
-}
+};
+
+export type { Column };

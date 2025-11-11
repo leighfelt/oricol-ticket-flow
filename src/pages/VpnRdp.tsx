@@ -1,0 +1,475 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import DashboardLayout from "@/components/DashboardLayout";
+import { useToast } from "@/hooks/use-toast";
+import { KeyRound, Upload, Plus, Trash2 } from "lucide-react";
+import { DataTable, type Column } from "@/components/DataTable";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+
+interface VpnRdpCredential {
+  id: string;
+  username: string;
+  password: string;
+  service_type: "VPN" | "RDP";
+  email: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const VpnRdp = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [credentials, setCredentials] = useState<VpnRdpCredential[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCredential, setSelectedCredential] = useState<VpnRdpCredential | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+    service_type: "VPN" as "VPN" | "RDP",
+    email: "",
+    notes: "",
+  });
+
+  useEffect(() => {
+    checkAccess();
+    fetchCredentials();
+  }, [navigate]);
+
+  const checkAccess = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate("/auth");
+      return;
+    }
+
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .in("role", ["admin", "support_staff"])
+      .maybeSingle();
+
+    if (!data) {
+      toast({
+        title: "Access Denied",
+        description: "You must be an admin or support staff to access this page",
+        variant: "destructive",
+      });
+      navigate("/dashboard");
+    }
+  };
+
+  const fetchCredentials = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("vpn_rdp_credentials")
+      .select("*")
+      .order("service_type")
+      .order("username");
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch credentials",
+        variant: "destructive",
+      });
+    } else {
+      setCredentials((data || []) as VpnRdpCredential[]);
+    }
+    setLoading(false);
+  };
+
+  const handleRowClick = (credential: VpnRdpCredential) => {
+    setSelectedCredential(credential);
+    setFormData({
+      username: credential.username,
+      password: credential.password,
+      service_type: credential.service_type,
+      email: credential.email || "",
+      notes: credential.notes || "",
+    });
+    setIsEditing(true);
+    setSheetOpen(true);
+  };
+
+  const handleAddNew = () => {
+    setSelectedCredential(null);
+    setFormData({
+      username: "",
+      password: "",
+      service_type: "VPN",
+      email: "",
+      notes: "",
+    });
+    setIsEditing(false);
+    setSheetOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!formData.username || !formData.password) {
+      toast({
+        title: "Error",
+        description: "Username and password are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const dataToSave = {
+      username: formData.username,
+      password: formData.password,
+      service_type: formData.service_type,
+      email: formData.email || null,
+      notes: formData.notes || null,
+    };
+
+    if (isEditing && selectedCredential) {
+      const { error } = await supabase
+        .from("vpn_rdp_credentials")
+        .update(dataToSave)
+        .eq("id", selectedCredential.id);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update credential",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Credential updated successfully",
+        });
+        setSheetOpen(false);
+        fetchCredentials();
+      }
+    } else {
+      const { error } = await supabase
+        .from("vpn_rdp_credentials")
+        .insert([dataToSave]);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to add credential",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Credential added successfully",
+        });
+        setSheetOpen(false);
+        fetchCredentials();
+      }
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedCredential) return;
+
+    const { error } = await supabase
+      .from("vpn_rdp_credentials")
+      .delete()
+      .eq("id", selectedCredential.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete credential",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Credential deleted successfully",
+      });
+      setSheetOpen(false);
+      fetchCredentials();
+    }
+  };
+
+  const handleCsvUpload = async () => {
+    if (!csvFile) {
+      toast({
+        title: "Error",
+        description: "Please select a CSV file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const text = e.target?.result as string;
+      const rows = text.split("\n").filter(row => row.trim());
+      
+      // Skip header row if it exists
+      const dataRows = rows[0].toLowerCase().includes("username") ? rows.slice(1) : rows;
+      
+      const credentialsToInsert = dataRows.map(row => {
+        const [username, password, serviceType, email, notes] = row.split(",").map(cell => cell.trim());
+        return {
+          username,
+          password,
+          service_type: (serviceType?.toUpperCase() === "RDP" ? "RDP" : "VPN") as "VPN" | "RDP",
+          email: email || null,
+          notes: notes || null,
+        };
+      }).filter(cred => cred.username && cred.password);
+
+      if (credentialsToInsert.length === 0) {
+        toast({
+          title: "Error",
+          description: "No valid credentials found in CSV file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from("vpn_rdp_credentials")
+        .insert(credentialsToInsert);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to import credentials",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: `Imported ${credentialsToInsert.length} credentials successfully`,
+        });
+        setAddDialogOpen(false);
+        setCsvFile(null);
+        fetchCredentials();
+      }
+    };
+
+    reader.readAsText(csvFile);
+  };
+
+  const columns: Column<VpnRdpCredential>[] = [
+    {
+      key: "service_type",
+      label: "Service",
+      sortable: true,
+      render: (credential) => (
+        <Badge variant={credential.service_type === "VPN" ? "default" : "secondary"}>
+          {credential.service_type}
+        </Badge>
+      ),
+    },
+    {
+      key: "username",
+      label: "Username",
+      sortable: true,
+      filterPlaceholder: "Filter by username...",
+    },
+    {
+      key: "password",
+      label: "Password",
+      render: () => "••••••••",
+    },
+    {
+      key: "email",
+      label: "Email",
+      sortable: true,
+      filterPlaceholder: "Filter by email...",
+    },
+    {
+      key: "notes",
+      label: "Notes",
+      render: (credential) => (
+        <span className="truncate max-w-xs block">
+          {credential.notes || "—"}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <DashboardLayout>
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <KeyRound className="w-8 h-8" />
+              VPN & RDP Credentials
+            </h1>
+            <p className="text-muted-foreground">Manage FortiClient VPN and RDP login credentials</p>
+          </div>
+          <div className="flex gap-2">
+            <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Import CSV
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Import Credentials from CSV</DialogTitle>
+                  <DialogDescription>
+                    Upload a CSV file with columns: username, password, service_type (VPN/RDP), email, notes
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="csv-file">CSV File</Label>
+                    <Input
+                      id="csv-file"
+                      type="file"
+                      accept=".csv"
+                      onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                    />
+                  </div>
+                  <Button onClick={handleCsvUpload} className="w-full">
+                    Upload and Import
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button onClick={handleAddNew}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Credential
+            </Button>
+          </div>
+        </div>
+
+        {loading ? (
+          <p>Loading credentials...</p>
+        ) : (
+          <DataTable
+            data={credentials}
+            columns={columns}
+            onRowClick={handleRowClick}
+            searchKeys={["username", "email", "service_type"]}
+          />
+        )}
+
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+          <SheetContent className="overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>{isEditing ? "Edit Credential" : "Add Credential"}</SheetTitle>
+              <SheetDescription>
+                {isEditing ? "Update the credential information" : "Enter the credential details"}
+              </SheetDescription>
+            </SheetHeader>
+
+            <div className="space-y-6 mt-6">
+              <div className="space-y-2">
+                <Label htmlFor="service_type">Service Type *</Label>
+                <Select
+                  value={formData.service_type}
+                  onValueChange={(value: "VPN" | "RDP") =>
+                    setFormData({ ...formData, service_type: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="VPN">VPN</SelectItem>
+                    <SelectItem value="RDP">RDP</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="username">Username *</Label>
+                <Input
+                  id="username"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  placeholder="Enter username"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="Enter password"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="user@example.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Additional notes..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button onClick={handleSave} className="flex-1">
+                  {isEditing ? "Update" : "Add"}
+                </Button>
+                {isEditing && (
+                  <Button onClick={handleDelete} variant="destructive">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default VpnRdp;
