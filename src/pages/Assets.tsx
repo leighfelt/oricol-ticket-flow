@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
@@ -22,6 +22,7 @@ const Assets = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     asset_tag: "",
@@ -130,16 +131,58 @@ const Assets = () => {
     setAssetToDelete(null);
   };
 
+  const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const rows = text.split('\n').filter(row => row.trim());
+      const headers = rows[0].split(',').map(h => h.trim());
+      
+      const assets = rows.slice(1).map(row => {
+        const values = row.split(',').map(v => v.trim());
+        const asset: any = {};
+        headers.forEach((header, index) => {
+          if (values[index]) {
+            asset[header] = values[index];
+          }
+        });
+        return asset;
+      });
+
+      const { error } = await supabase.from('assets').insert(assets);
+      
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Successfully imported ${assets.length} assets`,
+      });
+      fetchAssets();
+      event.target.value = '';
+    } catch (error: any) {
+      console.error('Error importing CSV:', error);
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to import CSV',
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      active: "bg-green-500",
-      maintenance: "bg-yellow-500",
-      retired: "bg-gray-500",
-      disposed: "bg-red-500",
+    const variants: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
+      active: "default",
+      maintenance: "secondary",
+      retired: "destructive",
     };
 
     return (
-      <Badge className={`${colors[status]} text-white`}>
+      <Badge variant={variants[status] || "outline"}>
         {status}
       </Badge>
     );
@@ -154,13 +197,25 @@ const Assets = () => {
             <p className="text-muted-foreground">Manage company assets</p>
           </div>
           {isAdmin && (
-            <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Asset
+            <div className="flex gap-2">
+              <Button variant="outline" disabled={isImporting} onClick={() => document.getElementById('csv-upload')?.click()}>
+                <Upload className="mr-2 h-4 w-4" />
+                {isImporting ? 'Importing...' : 'Import CSV'}
               </Button>
-            </DialogTrigger>
+              <input
+                id="csv-upload"
+                type="file"
+                accept=".csv"
+                onChange={handleCSVImport}
+                className="hidden"
+              />
+              <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Asset
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New Asset</DialogTitle>
@@ -246,6 +301,7 @@ const Assets = () => {
               </form>
             </DialogContent>
           </Dialog>
+            </div>
           )}
         </div>
 

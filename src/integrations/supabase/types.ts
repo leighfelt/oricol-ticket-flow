@@ -73,6 +73,132 @@ export type Database = {
           },
         ]
       }
+      hardware_inventory: {
+        Row: {
+          assigned_to: string | null
+          branch: string | null
+          created_at: string
+          device_name: string
+          device_type: string
+          id: string
+          last_seen: string | null
+          location: string | null
+          manufacturer: string | null
+          model: string | null
+          notes: string | null
+          os: string | null
+          os_version: string | null
+          processor: string | null
+          purchase_date: string | null
+          ram_gb: number | null
+          serial_number: string | null
+          status: string
+          storage_gb: number | null
+          updated_at: string
+          warranty_expires: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          branch?: string | null
+          created_at?: string
+          device_name: string
+          device_type: string
+          id?: string
+          last_seen?: string | null
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          os?: string | null
+          os_version?: string | null
+          processor?: string | null
+          purchase_date?: string | null
+          ram_gb?: number | null
+          serial_number?: string | null
+          status?: string
+          storage_gb?: number | null
+          updated_at?: string
+          warranty_expires?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          branch?: string | null
+          created_at?: string
+          device_name?: string
+          device_type?: string
+          id?: string
+          last_seen?: string | null
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          os?: string | null
+          os_version?: string | null
+          processor?: string | null
+          purchase_date?: string | null
+          ram_gb?: number | null
+          serial_number?: string | null
+          status?: string
+          storage_gb?: number | null
+          updated_at?: string
+          warranty_expires?: string | null
+        }
+        Relationships: []
+      }
+      licenses: {
+        Row: {
+          assigned_to: string | null
+          cost: number | null
+          created_at: string
+          id: string
+          license_key: string | null
+          license_name: string
+          license_type: string
+          notes: string | null
+          purchase_date: string | null
+          renewal_date: string | null
+          status: string
+          total_seats: number
+          updated_at: string
+          used_seats: number
+          vendor: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          cost?: number | null
+          created_at?: string
+          id?: string
+          license_key?: string | null
+          license_name: string
+          license_type: string
+          notes?: string | null
+          purchase_date?: string | null
+          renewal_date?: string | null
+          status?: string
+          total_seats: number
+          updated_at?: string
+          used_seats?: number
+          vendor: string
+        }
+        Update: {
+          assigned_to?: string | null
+          cost?: number | null
+          created_at?: string
+          id?: string
+          license_key?: string | null
+          license_name?: string
+          license_type?: string
+          notes?: string | null
+          purchase_date?: string | null
+          renewal_date?: string | null
+          status?: string
+          total_seats?: number
+          updated_at?: string
+          used_seats?: number
+          vendor?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -99,6 +225,65 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      software_inventory: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          expiry_date: string | null
+          id: string
+          install_date: string | null
+          installed_on: string | null
+          license_key: string | null
+          license_type: string | null
+          notes: string | null
+          software_name: string
+          status: string
+          updated_at: string
+          vendor: string | null
+          version: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          install_date?: string | null
+          installed_on?: string | null
+          license_key?: string | null
+          license_type?: string | null
+          notes?: string | null
+          software_name: string
+          status?: string
+          updated_at?: string
+          vendor?: string | null
+          version?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          install_date?: string | null
+          installed_on?: string | null
+          license_key?: string | null
+          license_type?: string | null
+          notes?: string | null
+          software_name?: string
+          status?: string
+          updated_at?: string
+          vendor?: string | null
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "software_inventory_installed_on_fkey"
+            columns: ["installed_on"]
+            isOneToOne: false
+            referencedRelation: "hardware_inventory"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ticket_comments: {
         Row: {

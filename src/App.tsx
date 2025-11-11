@@ -9,6 +9,9 @@ import Tickets from "./pages/Tickets";
 import Assets from "./pages/Assets";
 import Users from "./pages/Users";
 import Reports from "./pages/Reports";
+import HardwareInventory from "./pages/HardwareInventory";
+import SoftwareInventory from "./pages/SoftwareInventory";
+import Licenses from "./pages/Licenses";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +30,9 @@ const App = () => (
           <Route path="/assets" element={<Assets />} />
           <Route path="/users" element={<Users />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/hardware" element={<HardwareInventory />} />
+          <Route path="/software" element={<SoftwareInventory />} />
+          <Route path="/licenses" element={<Licenses />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
