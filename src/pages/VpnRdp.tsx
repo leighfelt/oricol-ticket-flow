@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 
 interface VpnRdpCredential {
@@ -54,6 +55,7 @@ const VpnRdp = () => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState<"VPN" | "RDP">("VPN");
 
   const [formData, setFormData] = useState({
     username: "",
@@ -130,7 +132,7 @@ const VpnRdp = () => {
     setFormData({
       username: "",
       password: "",
-      service_type: "VPN",
+      service_type: activeTab,
       email: "",
       notes: "",
     });
@@ -286,16 +288,6 @@ const VpnRdp = () => {
 
   const columns: Column<VpnRdpCredential>[] = [
     {
-      key: "service_type",
-      label: "Service",
-      sortable: true,
-      render: (serviceType) => (
-        <Badge variant={serviceType === "VPN" ? "default" : "secondary"}>
-          {serviceType}
-        </Badge>
-      ),
-    },
-    {
       key: "username",
       label: "Username",
       sortable: true,
@@ -323,6 +315,9 @@ const VpnRdp = () => {
     },
   ];
 
+  const vpnCredentials = credentials.filter(c => c.service_type === "VPN");
+  const rdpCredentials = credentials.filter(c => c.service_type === "RDP");
+
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
@@ -334,54 +329,79 @@ const VpnRdp = () => {
             </h1>
             <p className="text-muted-foreground">Manage FortiClient VPN and RDP login credentials</p>
           </div>
-          <div className="flex gap-2">
-            <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Import CSV
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Import Credentials from CSV</DialogTitle>
-                  <DialogDescription>
-                    Upload a CSV file with columns: username, password, service_type (VPN/RDP), email, notes
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="csv-file">CSV File</Label>
-                    <Input
-                      id="csv-file"
-                      type="file"
-                      accept=".csv"
-                      onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                    />
-                  </div>
-                  <Button onClick={handleCsvUpload} className="w-full">
-                    Upload and Import
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-            <Button onClick={handleAddNew}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Credential
-            </Button>
-          </div>
         </div>
 
-        {loading ? (
-          <p>Loading credentials...</p>
-        ) : (
-          <DataTable
-            data={credentials}
-            columns={columns}
-            onRowClick={handleRowClick}
-            searchKeys={["username", "email", "service_type"]}
-          />
-        )}
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "VPN" | "RDP")}>
+          <div className="flex items-center justify-between mb-4">
+            <TabsList>
+              <TabsTrigger value="VPN">VPN Credentials</TabsTrigger>
+              <TabsTrigger value="RDP">RDP Credentials</TabsTrigger>
+            </TabsList>
+            
+            <div className="flex gap-2">
+              <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Upload className="w-4 h-4 mr-2" />
+                    Import CSV
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Import {activeTab} Credentials from CSV</DialogTitle>
+                    <DialogDescription>
+                      Upload a CSV file with columns: username, password, service_type (VPN/RDP), email, notes
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="csv-file">CSV File</Label>
+                      <Input
+                        id="csv-file"
+                        type="file"
+                        accept=".csv"
+                        onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                      />
+                    </div>
+                    <Button onClick={handleCsvUpload} className="w-full">
+                      Upload and Import
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Button onClick={handleAddNew}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add {activeTab} Credential
+              </Button>
+            </div>
+          </div>
+
+          <TabsContent value="VPN">
+            {loading ? (
+              <p>Loading VPN credentials...</p>
+            ) : (
+              <DataTable
+                data={vpnCredentials}
+                columns={columns}
+                onRowClick={handleRowClick}
+                searchKeys={["username", "email"]}
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="RDP">
+            {loading ? (
+              <p>Loading RDP credentials...</p>
+            ) : (
+              <DataTable
+                data={rdpCredentials}
+                columns={columns}
+                onRowClick={handleRowClick}
+                searchKeys={["username", "email"]}
+              />
+            )}
+          </TabsContent>
+        </Tabs>
 
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetContent className="overflow-y-auto">
