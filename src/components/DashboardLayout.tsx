@@ -67,7 +67,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex md:flex-col md:w-64 bg-sidebar border-r border-sidebar-border">
         <div className="flex items-center justify-between gap-3 h-20 px-4 border-b border-sidebar-border">
-          <img src={oricolLogo} alt="Oricol Environmental Services" className="h-12 w-auto object-contain" />
+          <img src={oricolLogo} alt="Oricol Environmental Services" className="h-10 w-auto object-contain" />
           <img src={zerobitOneLogo} alt="Zero Bit One" className="h-10 w-auto object-contain" />
         </div>
         <nav className="flex-1 px-4 py-6 space-y-1">
@@ -108,7 +108,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <aside className="fixed top-0 left-0 bottom-0 w-64 bg-sidebar border-r border-sidebar-border">
             <div className="flex items-center justify-between h-20 px-4 border-b border-sidebar-border">
               <div className="flex items-center gap-2 flex-1">
-                <img src={oricolLogo} alt="Oricol Environmental Services" className="h-10 w-auto object-contain" />
+                <img src={oricolLogo} alt="Oricol Environmental Services" className="h-8 w-auto object-contain" />
                 <img src={zerobitOneLogo} alt="Zero Bit One" className="h-8 w-auto object-contain" />
               </div>
               <Button
@@ -159,7 +159,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between h-16 px-4 border-b border-border bg-card">
           <div className="flex items-center gap-2">
-            <img src={oricolLogo} alt="Oricol" className="h-8 w-auto object-contain" />
+            <img src={oricolLogo} alt="Oricol" className="h-7 w-auto object-contain" />
             <img src={zerobitOneLogo} alt="Zero Bit One" className="h-7 w-auto object-contain" />
           </div>
           <Button
