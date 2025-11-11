@@ -4,6 +4,8 @@ import { LayoutDashboard, Ticket, Package, LogOut, Menu, X, Users, FileBarChart,
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import oricolLogo from "@/assets/oricol-logo.png";
+import zerobitOneLogo from "@/assets/zerobitone-logo.png";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -64,8 +66,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     <div className="flex h-screen bg-background">
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex md:flex-col md:w-64 bg-sidebar border-r border-sidebar-border">
-        <div className="flex items-center h-16 px-6 border-b border-sidebar-border">
-          <h1 className="text-xl font-bold text-sidebar-foreground">Oricol Helpdesk</h1>
+        <div className="flex items-center justify-between gap-3 h-20 px-4 border-b border-sidebar-border">
+          <img src={oricolLogo} alt="Oricol Environmental Services" className="h-12 w-auto object-contain" />
+          <img src={zerobitOneLogo} alt="Zero Bit One" className="h-10 w-auto object-contain" />
         </div>
         <nav className="flex-1 px-4 py-6 space-y-1">
           {navigation.map((item) => {
@@ -103,8 +106,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="fixed inset-0 bg-background/80" onClick={() => setMobileMenuOpen(false)} />
           <aside className="fixed top-0 left-0 bottom-0 w-64 bg-sidebar border-r border-sidebar-border">
-            <div className="flex items-center justify-between h-16 px-6 border-b border-sidebar-border">
-              <h1 className="text-xl font-bold text-sidebar-foreground">Oricol Helpdesk</h1>
+            <div className="flex items-center justify-between h-20 px-4 border-b border-sidebar-border">
+              <div className="flex items-center gap-2 flex-1">
+                <img src={oricolLogo} alt="Oricol Environmental Services" className="h-10 w-auto object-contain" />
+                <img src={zerobitOneLogo} alt="Zero Bit One" className="h-8 w-auto object-contain" />
+              </div>
               <Button
                 variant="ghost"
                 size="icon"
@@ -152,7 +158,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between h-16 px-4 border-b border-border bg-card">
-          <h1 className="text-lg font-bold">Oricol Helpdesk</h1>
+          <div className="flex items-center gap-2">
+            <img src={oricolLogo} alt="Oricol" className="h-8 w-auto object-contain" />
+            <img src={zerobitOneLogo} alt="Zero Bit One" className="h-7 w-auto object-contain" />
+          </div>
           <Button
             variant="ghost"
             size="icon"
