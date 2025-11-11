@@ -276,6 +276,8 @@ export type Database = {
       }
       remote_sessions: {
         Row: {
+          connection_details: Json | null
+          connection_type: string | null
           created_at: string
           device_info: Json | null
           ended_at: string | null
@@ -290,6 +292,8 @@ export type Database = {
           user_name: string
         }
         Insert: {
+          connection_details?: Json | null
+          connection_type?: string | null
           created_at?: string
           device_info?: Json | null
           ended_at?: string | null
@@ -304,6 +308,8 @@ export type Database = {
           user_name: string
         }
         Update: {
+          connection_details?: Json | null
+          connection_type?: string | null
           created_at?: string
           device_info?: Json | null
           ended_at?: string | null
