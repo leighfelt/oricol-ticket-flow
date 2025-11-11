@@ -289,9 +289,9 @@ const VpnRdp = () => {
       key: "service_type",
       label: "Service",
       sortable: true,
-      render: (credential) => (
-        <Badge variant={credential.service_type === "VPN" ? "default" : "secondary"}>
-          {credential.service_type}
+      render: (serviceType) => (
+        <Badge variant={serviceType === "VPN" ? "default" : "secondary"}>
+          {serviceType}
         </Badge>
       ),
     },
@@ -315,9 +315,9 @@ const VpnRdp = () => {
     {
       key: "notes",
       label: "Notes",
-      render: (credential) => (
+      render: (notes) => (
         <span className="truncate max-w-xs block">
-          {credential.notes || "—"}
+          {notes || "—"}
         </span>
       ),
     },
