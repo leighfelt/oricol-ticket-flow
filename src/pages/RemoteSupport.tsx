@@ -92,6 +92,7 @@ const RegisteredClients = () => {
       label: "Last Seen",
       sortable: true,
       render: (client) => {
+        if (!client.last_seen_at) return "Never";
         return formatDistanceToNow(new Date(client.last_seen_at), { addSuffix: true });
       },
     },
