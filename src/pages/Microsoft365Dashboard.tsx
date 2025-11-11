@@ -71,8 +71,8 @@ const Microsoft365Dashboard = () => {
       .order("created_at", { ascending: false });
 
     const { data: userData } = await supabase
-      .from("profiles")
-      .select("*")
+      .from("directory_users" as any)
+      .select("id, display_name, email, created_at")
       .order("created_at", { ascending: false });
 
     setDevices(hardwareData || []);
@@ -412,7 +412,7 @@ const Microsoft365Dashboard = () => {
                   <TableBody>
                     {users.map((user) => (
                       <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.full_name || "N/A"}</TableCell>
+                        <TableCell className="font-medium">{user.display_name || "N/A"}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
                       </TableRow>

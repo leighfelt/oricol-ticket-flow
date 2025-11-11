@@ -25,6 +25,9 @@ interface MicrosoftUser {
   displayName: string;
   mail: string;
   officeLocation?: string;
+  jobTitle?: string;
+  department?: string;
+  accountEnabled?: boolean;
 }
 
 interface MicrosoftLicense {
@@ -149,7 +152,7 @@ serve(async (req) => {
     try {
       console.log('Fetching users...');
       const usersResponse = await fetch(
-        'https://graph.microsoft.com/v1.0/users?$select=id,userPrincipalName,displayName,mail,officeLocation',
+        'https://graph.microsoft.com/v1.0/users?$select=id,userPrincipalName,displayName,mail,officeLocation,jobTitle,department,accountEnabled',
         { headers }
       );
 
@@ -159,17 +162,23 @@ serve(async (req) => {
         console.log(`Found ${users.length} users`);
 
         for (const user of users) {
+          const email = user.mail || user.userPrincipalName;
           const { error } = await supabase
-            .from('profiles')
+            .from('directory_users')
             .upsert({
-              email: user.userPrincipalName || user.mail,
-              full_name: user.displayName,
-            }, { 
-              onConflict: 'email',
-              ignoreDuplicates: true 
+              aad_id: user.id,
+              display_name: user.displayName,
+              email,
+              user_principal_name: user.userPrincipalName,
+              job_title: user.jobTitle || null,
+              department: user.department || null,
+              account_enabled: typeof user.accountEnabled === 'boolean' ? user.accountEnabled : null,
+            }, {
+              onConflict: 'aad_id',
+              ignoreDuplicates: false
             });
 
-          if (error && error.code !== '23505') { // Ignore duplicate key errors
+          if (error) {
             console.error('Error syncing user:', error);
             syncResults.errors.push(`User ${user.displayName}: ${error.message}`);
           } else {

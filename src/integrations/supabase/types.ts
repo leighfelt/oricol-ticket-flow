@@ -73,6 +73,45 @@ export type Database = {
           },
         ]
       }
+      directory_users: {
+        Row: {
+          aad_id: string | null
+          account_enabled: boolean | null
+          created_at: string
+          department: string | null
+          display_name: string | null
+          email: string | null
+          id: string
+          job_title: string | null
+          updated_at: string
+          user_principal_name: string | null
+        }
+        Insert: {
+          aad_id?: string | null
+          account_enabled?: boolean | null
+          created_at?: string
+          department?: string | null
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          job_title?: string | null
+          updated_at?: string
+          user_principal_name?: string | null
+        }
+        Update: {
+          aad_id?: string | null
+          account_enabled?: boolean | null
+          created_at?: string
+          department?: string | null
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          job_title?: string | null
+          updated_at?: string
+          user_principal_name?: string | null
+        }
+        Relationships: []
+      }
       hardware_inventory: {
         Row: {
           assigned_to: string | null
