@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
-import { Monitor, Upload, Plus, Trash2, ArrowLeftRight } from "lucide-react";
+import { Monitor, Upload, Plus, Trash2, ArrowLeftRight, Filter } from "lucide-react";
 import { DataTable, type Column } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
