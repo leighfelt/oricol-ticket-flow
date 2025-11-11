@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
-import { KeyRound, Upload, Plus, Trash2, ArrowLeftRight } from "lucide-react";
+import { KeyRound, Upload, Plus, Trash2, ArrowLeftRight, Filter } from "lucide-react";
 import { DataTable, type Column } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +68,8 @@ const Vpn = () => {
     errors: string[];
   }>>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [hasEmailFilter, setHasEmailFilter] = useState(false);
+  const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
 
   const [formData, setFormData] = useState({
     username: "",
@@ -408,6 +410,43 @@ vpnuser3,Pass789word,user3@example.com,Guest VPN user`;
     }
   };
 
+  const getFilteredCredentials = () => {
+    let filtered = credentials;
+
+    // Filter by email presence
+    if (hasEmailFilter) {
+      filtered = filtered.filter((cred) => cred.email && cred.email.length > 0);
+    }
+
+    // Filter by date
+    if (dateFilter !== "all") {
+      const now = new Date();
+      const filterDate = new Date();
+      
+      if (dateFilter === "today") {
+        filterDate.setHours(0, 0, 0, 0);
+      } else if (dateFilter === "week") {
+        filterDate.setDate(now.getDate() - 7);
+      } else if (dateFilter === "month") {
+        filterDate.setMonth(now.getMonth() - 1);
+      }
+
+      filtered = filtered.filter((cred) => {
+        const createdDate = new Date(cred.created_at);
+        return createdDate >= filterDate;
+      });
+    }
+
+    return filtered;
+  };
+
+  const handleClearAllFilters = () => {
+    setHasEmailFilter(false);
+    setDateFilter("all");
+  };
+
+  const activeFilterCount = (hasEmailFilter ? 1 : 0) + (dateFilter !== "all" ? 1 : 0);
+
   const columns: Column<VpnCredential>[] = [
     {
       key: "username",
@@ -447,6 +486,38 @@ vpnuser3,Pass789word,user3@example.com,Guest VPN user`;
               VPN Credentials
             </h1>
             <p className="text-muted-foreground">Manage FortiClient VPN login credentials</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <Button
+              variant={hasEmailFilter ? "default" : "outline"}
+              size="sm"
+              onClick={() => setHasEmailFilter(!hasEmailFilter)}
+            >
+              Has Email {hasEmailFilter && "✓"}
+            </Button>
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value as any)}
+              className="h-9 px-3 rounded-md border border-input bg-background text-sm"
+            >
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">Last 7 Days</option>
+              <option value="month">Last 30 Days</option>
+            </select>
+            {activeFilterCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearAllFilters}
+              >
+                Clear Filters ({activeFilterCount})
+              </Button>
+            )}
           </div>
         </div>
 
@@ -612,7 +683,7 @@ vpnuser3,Pass789word,user3@example.com,Guest VPN user`;
           <p>Loading VPN credentials...</p>
         ) : (
           <DataTable
-            data={credentials}
+            data={getFilteredCredentials()}
             columns={columns}
             onRowClick={handleRowClick}
             searchKeys={["username", "email"]}
