@@ -59,6 +59,15 @@ const Rdp = () => {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRows, setSelectedRows] = useState<RdpCredential[]>([]);
+  const [csvPreview, setCsvPreview] = useState<Array<{
+    username: string;
+    password: string;
+    email: string;
+    notes: string;
+    valid: boolean;
+    errors: string[];
+  }>>([]);
+  const [showPreview, setShowPreview] = useState(false);
 
   const [formData, setFormData] = useState({
     username: "",
@@ -290,62 +299,91 @@ const Rdp = () => {
       const hasHeader = rows[0].toLowerCase().includes("username");
       const dataRows = hasHeader ? rows.slice(1) : rows;
       
-      const credentialsToInsert = dataRows.map(row => {
+      const previewData = dataRows.map((row, index) => {
         const columns = row.split(",").map(cell => cell.trim());
+        const errors: string[] = [];
         
-        // Support both formats:
-        // Format 1: username, password, email, notes (4 columns)
-        // Format 2: username, password, service_type, email, notes (5 columns)
         let username, password, email, notes;
         
         if (columns.length >= 5) {
-          // 5+ columns: assume service_type is included
           [username, password, , email, notes] = columns;
-        } else {
-          // 4 or fewer columns: no service_type column
+        } else if (columns.length >= 4) {
           [username, password, email, notes] = columns;
+        } else {
+          errors.push("Insufficient columns");
+        }
+        
+        if (!username || username.length === 0) {
+          errors.push("Username is required");
+        }
+        if (!password || password.length === 0) {
+          errors.push("Password is required");
+        }
+        if (username && username.length > 100) {
+          errors.push("Username too long (max 100 chars)");
+        }
+        if (email && email.length > 0 && !email.includes("@")) {
+          errors.push("Invalid email format");
         }
         
         return {
-          username,
-          password,
-          service_type: "RDP" as const,
-          email: email || null,
-          notes: notes || null,
+          username: username || "",
+          password: password || "",
+          email: email || "",
+          notes: notes || "",
+          valid: errors.length === 0,
+          errors,
         };
-      }).filter(cred => cred.username && cred.password);
-
-      if (credentialsToInsert.length === 0) {
-        toast({
-          title: "Error",
-          description: "No valid credentials found in CSV file",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { error } = await supabase
-        .from("vpn_rdp_credentials")
-        .insert(credentialsToInsert);
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to import credentials",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: `Imported ${credentialsToInsert.length} credential(s) successfully`,
-        });
-        setAddDialogOpen(false);
-        setCsvFile(null);
-        fetchCredentials();
-      }
+      });
+      
+      setCsvPreview(previewData);
+      setShowPreview(true);
     };
 
     reader.readAsText(csvFile);
+  };
+
+  const handleConfirmImport = async () => {
+    const validCredentials = csvPreview
+      .filter(cred => cred.valid)
+      .map(cred => ({
+        username: cred.username,
+        password: cred.password,
+        service_type: "RDP" as const,
+        email: cred.email || null,
+        notes: cred.notes || null,
+      }));
+
+    if (validCredentials.length === 0) {
+      toast({
+        title: "Error",
+        description: "No valid credentials to import",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await supabase
+      .from("vpn_rdp_credentials")
+      .insert(validCredentials);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to import credentials",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: `Imported ${validCredentials.length} credential(s) successfully`,
+      });
+      setAddDialogOpen(false);
+      setCsvFile(null);
+      setCsvPreview([]);
+      setShowPreview(false);
+      fetchCredentials();
+    }
   };
 
   const columns: Column<RdpCredential>[] = [
@@ -423,7 +461,7 @@ const Rdp = () => {
                   Import CSV
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Import RDP Credentials from CSV</DialogTitle>
                   <DialogDescription>
@@ -434,20 +472,104 @@ const Rdp = () => {
                     <span className="text-xs text-muted-foreground">First row can be a header (will be auto-detected)</span>
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="csv-file">CSV File</Label>
-                    <Input
-                      id="csv-file"
-                      type="file"
-                      accept=".csv"
-                      onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                    />
+                
+                {!showPreview ? (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="csv-file">CSV File</Label>
+                      <Input
+                        id="csv-file"
+                        type="file"
+                        accept=".csv"
+                        onChange={(e) => {
+                          setCsvFile(e.target.files?.[0] || null);
+                          setShowPreview(false);
+                          setCsvPreview([]);
+                        }}
+                      />
+                    </div>
+                    <Button onClick={handleCsvUpload} className="w-full" disabled={!csvFile}>
+                      Preview Import
+                    </Button>
                   </div>
-                  <Button onClick={handleCsvUpload} className="w-full">
-                    Upload and Import
-                  </Button>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">
+                          Found {csvPreview.length} rows
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {csvPreview.filter(r => r.valid).length} valid, {csvPreview.filter(r => !r.valid).length} with errors
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowPreview(false);
+                          setCsvPreview([]);
+                          setCsvFile(null);
+                        }}
+                      >
+                        Choose Different File
+                      </Button>
+                    </div>
+                    
+                    <div className="border rounded-lg max-h-96 overflow-y-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted sticky top-0">
+                          <tr>
+                            <th className="p-2 text-left">Status</th>
+                            <th className="p-2 text-left">Username</th>
+                            <th className="p-2 text-left">Password</th>
+                            <th className="p-2 text-left">Email</th>
+                            <th className="p-2 text-left">Notes</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {csvPreview.map((row, index) => (
+                            <tr key={index} className={row.valid ? "" : "bg-destructive/10"}>
+                              <td className="p-2">
+                                {row.valid ? (
+                                  <span className="text-green-600">✓</span>
+                                ) : (
+                                  <span className="text-destructive" title={row.errors.join(", ")}>✗</span>
+                                )}
+                              </td>
+                              <td className="p-2 truncate max-w-[150px]">{row.username || "—"}</td>
+                              <td className="p-2 truncate max-w-[150px]">{row.password || "—"}</td>
+                              <td className="p-2 truncate max-w-[150px]">{row.email || "—"}</td>
+                              <td className="p-2 truncate max-w-[150px]">{row.notes || "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    
+                    {csvPreview.some(r => !r.valid) && (
+                      <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                        <p className="text-sm font-medium text-destructive mb-2">Validation Errors:</p>
+                        <ul className="text-xs space-y-1 text-destructive">
+                          {csvPreview.filter(r => !r.valid).slice(0, 5).map((row, index) => (
+                            <li key={index}>Row {csvPreview.indexOf(row) + 1}: {row.errors.join(", ")}</li>
+                          ))}
+                          {csvPreview.filter(r => !r.valid).length > 5 && (
+                            <li>... and {csvPreview.filter(r => !r.valid).length - 5} more errors</li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    <Button 
+                      onClick={handleConfirmImport} 
+                      className="w-full"
+                      disabled={csvPreview.filter(r => r.valid).length === 0}
+                    >
+                      Import {csvPreview.filter(r => r.valid).length} Valid Credential(s)
+                    </Button>
+                  </div>
+                )}
               </DialogContent>
             </Dialog>
             <Button onClick={handleAddNew}>
