@@ -15,6 +15,8 @@ const Reports = () => {
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [ticketStats, setTicketStats] = useState<any>(null);
   const [assetStats, setAssetStats] = useState<any>(null);
+  const [licenseStats, setLicenseStats] = useState<any>(null);
+  const [userStats, setUserStats] = useState<any>(null);
   const [branchStats, setBranchStats] = useState<any[]>([]);
   const [priorityStats, setPriorityStats] = useState<any[]>([]);
   const [faultTypeStats, setFaultTypeStats] = useState<any[]>([]);
@@ -50,6 +52,8 @@ const Reports = () => {
     await Promise.all([
       fetchTicketStats(),
       fetchAssetStats(),
+      fetchLicenseStats(),
+      fetchUserStats(),
       fetchBranchStats(),
       fetchPriorityStats(),
       fetchFaultTypeStats(),
@@ -73,12 +77,32 @@ const Reports = () => {
   };
 
   const fetchAssetStats = async () => {
-    const { count: total } = await supabase.from("assets").select("*", { count: "exact", head: true });
-    const { count: active } = await supabase.from("assets").select("*", { count: "exact", head: true }).eq("status", "active");
-    const { count: maintenance } = await supabase.from("assets").select("*", { count: "exact", head: true }).eq("status", "maintenance");
-    const { count: retired } = await supabase.from("assets").select("*", { count: "exact", head: true }).eq("status", "retired");
+    // Fetch from hardware_inventory (Microsoft 365 devices)
+    const { count: total } = await supabase.from("hardware_inventory").select("*", { count: "exact", head: true });
+    const { count: active } = await supabase.from("hardware_inventory").select("*", { count: "exact", head: true }).eq("status", "active");
+    const { count: maintenance } = await supabase.from("hardware_inventory").select("*", { count: "exact", head: true }).eq("status", "maintenance");
+    const { count: retired } = await supabase.from("hardware_inventory").select("*", { count: "exact", head: true }).eq("status", "retired");
 
     setAssetStats({ total: total || 0, active: active || 0, maintenance: maintenance || 0, retired: retired || 0 });
+  };
+
+  const fetchLicenseStats = async () => {
+    // Fetch from licenses table (Microsoft 365 licenses)
+    const { count: total } = await supabase.from("licenses").select("*", { count: "exact", head: true });
+    const { data: licenses } = await supabase.from("licenses").select("total_seats, used_seats");
+    
+    const totalSeats = licenses?.reduce((acc, l) => acc + l.total_seats, 0) || 0;
+    const usedSeats = licenses?.reduce((acc, l) => acc + l.used_seats, 0) || 0;
+
+    setLicenseStats({ total: total || 0, totalSeats, usedSeats });
+  };
+
+  const fetchUserStats = async () => {
+    // Fetch from directory_users (Microsoft 365 users)
+    const { count: total } = await supabase.from("directory_users").select("*", { count: "exact", head: true });
+    const { count: enabled } = await supabase.from("directory_users").select("*", { count: "exact", head: true }).eq("account_enabled", true);
+
+    setUserStats({ total: total || 0, enabled: enabled || 0 });
   };
 
   const fetchBranchStats = async () => {
@@ -210,6 +234,8 @@ const Reports = () => {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="tickets">Tickets</TabsTrigger>
             <TabsTrigger value="assets">Assets</TabsTrigger>
+            <TabsTrigger value="licenses">Licenses</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="branches">Branches</TabsTrigger>
           </TabsList>
 
@@ -450,13 +476,130 @@ const Reports = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Hardware & Software Inventory</CardTitle>
-                <CardDescription>Detailed breakdown of assets</CardDescription>
+                <CardTitle>Hardware Inventory (Microsoft 365)</CardTitle>
+                <CardDescription>Devices synced from Microsoft 365</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Detailed inventory reports will be available after CSV import and M365 integration.
-                </p>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="flex flex-col p-3 border rounded-lg">
+                    <span className="text-2xl font-bold">{assetStats?.total || 0}</span>
+                    <span className="text-sm text-muted-foreground">Total Devices</span>
+                  </div>
+                  <div className="flex flex-col p-3 border rounded-lg">
+                    <span className="text-2xl font-bold text-green-600">{assetStats?.active || 0}</span>
+                    <span className="text-sm text-muted-foreground">Active Devices</span>
+                  </div>
+                  <div className="flex flex-col p-3 border rounded-lg">
+                    <span className="text-2xl font-bold text-orange-600">{assetStats?.maintenance || 0}</span>
+                    <span className="text-sm text-muted-foreground">In Maintenance</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="licenses" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>License Overview (Microsoft 365)</CardTitle>
+                <CardDescription>License usage and allocation</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="flex flex-col p-3 border rounded-lg">
+                    <span className="text-2xl font-bold">{licenseStats?.total || 0}</span>
+                    <span className="text-sm text-muted-foreground">Total Licenses</span>
+                  </div>
+                  <div className="flex flex-col p-3 border rounded-lg">
+                    <span className="text-2xl font-bold text-blue-600">{licenseStats?.totalSeats || 0}</span>
+                    <span className="text-sm text-muted-foreground">Total Seats</span>
+                  </div>
+                  <div className="flex flex-col p-3 border rounded-lg">
+                    <span className="text-2xl font-bold text-green-600">{licenseStats?.usedSeats || 0}</span>
+                    <span className="text-sm text-muted-foreground">Used Seats</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>License Utilization</CardTitle>
+                <CardDescription>Seat usage efficiency</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: "Used Seats", value: licenseStats?.usedSeats || 0 },
+                        { name: "Available Seats", value: (licenseStats?.totalSeats || 0) - (licenseStats?.usedSeats || 0) },
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: ${value}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      <Cell fill="#0088FE" />
+                      <Cell fill="#00C49F" />
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Directory Users (Microsoft 365)</CardTitle>
+                <CardDescription>User accounts synced from Microsoft 365</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="flex flex-col p-3 border rounded-lg">
+                    <span className="text-2xl font-bold">{userStats?.total || 0}</span>
+                    <span className="text-sm text-muted-foreground">Total Users</span>
+                  </div>
+                  <div className="flex flex-col p-3 border rounded-lg">
+                    <span className="text-2xl font-bold text-green-600">{userStats?.enabled || 0}</span>
+                    <span className="text-sm text-muted-foreground">Enabled Accounts</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>User Account Status</CardTitle>
+                <CardDescription>Active vs inactive accounts</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: "Enabled", value: userStats?.enabled || 0 },
+                        { name: "Disabled", value: (userStats?.total || 0) - (userStats?.enabled || 0) },
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: ${value}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      <Cell fill="#82CA9D" />
+                      <Cell fill="#FF8042" />
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
           </TabsContent>
