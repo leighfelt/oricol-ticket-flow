@@ -55,6 +55,7 @@ const Vpn = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [bulkConvertDialogOpen, setBulkConvertDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRows, setSelectedRows] = useState<VpnCredential[]>([]);
@@ -247,6 +248,30 @@ const Vpn = () => {
     }
   };
 
+  const handleBulkDelete = async () => {
+    const ids = selectedRows.map((row) => row.id);
+    const { error } = await supabase
+      .from("vpn_rdp_credentials")
+      .delete()
+      .in("id", ids);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete credentials",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: `Deleted ${selectedRows.length} credential(s)`,
+      });
+      setSelectedRows([]);
+      setBulkDeleteDialogOpen(false);
+      fetchCredentials();
+    }
+  };
+
   const handleCsvUpload = async () => {
     if (!csvFile) {
       toast({
@@ -363,6 +388,14 @@ const Vpn = () => {
               >
                 <ArrowLeftRight className="w-4 h-4 mr-2" />
                 Convert to RDP
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={() => setBulkDeleteDialogOpen(true)}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Selected
               </Button>
             </div>
           )}
@@ -497,6 +530,23 @@ const Vpn = () => {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleBulkConvertToRdp}>Convert</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Selected Credentials?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete {selectedRows.length} VPN credential(s). This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
