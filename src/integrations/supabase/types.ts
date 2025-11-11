@@ -363,6 +363,44 @@ export type Database = {
           },
         ]
       }
+      ticket_time_logs: {
+        Row: {
+          created_at: string
+          id: string
+          logged_at: string
+          minutes: number
+          notes: string | null
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logged_at?: string
+          minutes: number
+          notes?: string | null
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logged_at?: string
+          minutes?: number
+          notes?: string | null
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_time_logs_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tickets: {
         Row: {
           assigned_to: string | null
@@ -374,9 +412,12 @@ export type Database = {
           error_code: string | null
           fault_type: string | null
           id: string
+          last_activity_at: string | null
           priority: Database["public"]["Enums"]["ticket_priority"]
+          reminder_sent_at: string | null
           resolved_at: string | null
           status: Database["public"]["Enums"]["ticket_status"]
+          time_spent_minutes: number | null
           title: string
           updated_at: string
           user_email: string | null
@@ -391,9 +432,12 @@ export type Database = {
           error_code?: string | null
           fault_type?: string | null
           id?: string
+          last_activity_at?: string | null
           priority?: Database["public"]["Enums"]["ticket_priority"]
+          reminder_sent_at?: string | null
           resolved_at?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
+          time_spent_minutes?: number | null
           title: string
           updated_at?: string
           user_email?: string | null
@@ -408,9 +452,12 @@ export type Database = {
           error_code?: string | null
           fault_type?: string | null
           id?: string
+          last_activity_at?: string | null
           priority?: Database["public"]["Enums"]["ticket_priority"]
+          reminder_sent_at?: string | null
           resolved_at?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
+          time_spent_minutes?: number | null
           title?: string
           updated_at?: string
           user_email?: string | null

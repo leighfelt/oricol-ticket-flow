@@ -46,6 +46,13 @@ const Tickets = () => {
   const [editFaultType, setEditFaultType] = useState("");
   const [editUserEmail, setEditUserEmail] = useState("");
   const [editErrorCode, setEditErrorCode] = useState("");
+  const [currentUserEmail, setCurrentUserEmail] = useState("");
+  const [currentUserName, setCurrentUserName] = useState("");
+  const [isSupportStaff, setIsSupportStaff] = useState(false);
+  const [timeLogDialogOpen, setTimeLogDialogOpen] = useState(false);
+  const [timeLogMinutes, setTimeLogMinutes] = useState("");
+  const [timeLogNotes, setTimeLogNotes] = useState("");
+  const [timeLogs, setTimeLogs] = useState<any[]>([]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -62,13 +69,16 @@ const Tickets = () => {
   const fetchUserProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("id")
+      .select("id, email, full_name, user_id")
       .eq("user_id", userId)
       .single();
 
     if (data) {
       setCurrentUserId(data.id);
+      setCurrentUserEmail(data.email || "");
+      setCurrentUserName(data.full_name || "");
       checkAdminRole(userId);
+      checkSupportRole(userId);
     }
   };
 
@@ -81,6 +91,16 @@ const Tickets = () => {
       .maybeSingle();
 
     setIsAdmin(!!data);
+  };
+
+  const checkSupportRole = async (userId: string) => {
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .in("role", ["admin", "support_staff"]);
+
+    setIsSupportStaff((data || []).length > 0);
   };
 
   const fetchTickets = async () => {
@@ -106,6 +126,9 @@ const Tickets = () => {
 
     setIsSubmitting(true);
 
+    // Auto-assign to current user if they're support staff
+    const assignedTo = isSupportStaff ? currentUserId : null;
+
     const { data: ticketData, error } = await supabase.from("tickets").insert([{
       title,
       description,
@@ -116,7 +139,9 @@ const Tickets = () => {
       user_email: userEmail || null,
       error_code: errorCode || null,
       created_by: currentUserId,
+      assigned_to: assignedTo,
       status: "open" as any,
+      last_activity_at: new Date().toISOString(),
     }]).select().single();
 
     if (error) {
@@ -129,7 +154,29 @@ const Tickets = () => {
       return;
     }
 
-    // Route email if ticket created successfully
+    // Send email notification if auto-assigned
+    if (ticketData && assignedTo && currentUserEmail) {
+      try {
+        await supabase.functions.invoke("notify-ticket-assignment", {
+          body: {
+            assigneeEmail: currentUserEmail,
+            assigneeName: currentUserName || "Support Staff",
+            ticketId: ticketData.id,
+            ticketTitle: title,
+            ticketDescription: description,
+            priority,
+            branch,
+            faultType,
+            userEmail,
+          },
+        });
+      } catch (emailError) {
+        console.error("Email notification error:", emailError);
+        // Don't fail the ticket creation if email fails
+      }
+    }
+
+    // Route email to IT support email (existing functionality)
     if (ticketData) {
       try {
         await supabase.functions.invoke("route-ticket-email", {
@@ -146,13 +193,14 @@ const Tickets = () => {
         });
       } catch (emailError) {
         console.error("Email routing error:", emailError);
-        // Don't fail the ticket creation if email fails
       }
     }
 
     toast({
       title: "Success",
-      description: "Ticket created successfully",
+      description: isSupportStaff 
+        ? "Ticket created and assigned to you. Email notification sent." 
+        : "Ticket created successfully",
     });
     
     setOpen(false);
@@ -232,6 +280,98 @@ const Tickets = () => {
     setEditErrorCode(ticket.error_code || "");
     setEditMode(false);
     setSheetOpen(true);
+    fetchTimeLogs(ticket.id);
+  };
+
+  const fetchTimeLogs = async (ticketId: string) => {
+    const { data } = await supabase
+      .from("ticket_time_logs")
+      .select("*")
+      .eq("ticket_id", ticketId)
+      .order("logged_at", { ascending: false });
+
+    setTimeLogs(data || []);
+  };
+
+  const handleLogTime = async () => {
+    if (!selectedTicket || !timeLogMinutes || !isSupportStaff) return;
+
+    const minutes = parseInt(timeLogMinutes);
+    if (isNaN(minutes) || minutes <= 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid number of minutes",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await supabase
+      .from("ticket_time_logs")
+      .insert({
+        ticket_id: selectedTicket.id,
+        user_id: currentUserId,
+        minutes,
+        notes: timeLogNotes || null,
+      });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update ticket's total time
+    const newTotalTime = (selectedTicket.time_spent_minutes || 0) + minutes;
+    await supabase
+      .from("tickets")
+      .update({ time_spent_minutes: newTotalTime })
+      .eq("id", selectedTicket.id);
+
+    toast({
+      title: "Success",
+      description: `Logged ${minutes} minutes`,
+    });
+
+    setTimeLogDialogOpen(false);
+    setTimeLogMinutes("");
+    setTimeLogNotes("");
+    fetchTimeLogs(selectedTicket.id);
+    fetchTickets();
+    
+    // Update selected ticket
+    const updatedTicket = { ...selectedTicket, time_spent_minutes: newTotalTime };
+    setSelectedTicket(updatedTicket);
+  };
+
+  const handleSendReminders = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("send-ticket-reminders");
+
+      if (error) throw error;
+
+      toast({
+        title: "Reminders Sent",
+        description: `Sent ${data?.remindersSent || 0} reminder(s) for open tickets`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours === 0) return `${mins}m`;
+    if (mins === 0) return `${hours}h`;
+    return `${hours}h ${mins}m`;
   };
 
   const handleSaveChanges = async () => {
@@ -342,13 +482,20 @@ const Tickets = () => {
             <h1 className="text-3xl font-bold">Tickets</h1>
             <p className="text-muted-foreground">Manage support tickets</p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Ticket
+          <div className="flex gap-2">
+            {isSupportStaff && (
+              <Button variant="outline" onClick={handleSendReminders}>
+                <Clock className="mr-2 h-4 w-4" />
+                Send Reminders
               </Button>
-            </DialogTrigger>
+            )}
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Ticket
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create New Ticket</DialogTitle>
@@ -460,6 +607,7 @@ const Tickets = () => {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         <Card>
@@ -621,6 +769,48 @@ const Tickets = () => {
                       </div>
 
                       <Separator />
+
+                      {isSupportStaff && (
+                        <>
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <Label className="text-base font-semibold">Time Tracking</Label>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  Total time: {formatDuration(selectedTicket.time_spent_minutes || 0)}
+                                </p>
+                              </div>
+                              <Button size="sm" onClick={() => setTimeLogDialogOpen(true)}>
+                                <Clock className="h-4 w-4 mr-2" />
+                                Log Time
+                              </Button>
+                            </div>
+
+                            {timeLogs.length > 0 && (
+                              <div className="space-y-2">
+                                <Label className="text-sm text-muted-foreground">Recent Time Logs</Label>
+                                <div className="space-y-2 max-h-48 overflow-y-auto">
+                                  {timeLogs.slice(0, 5).map((log) => (
+                                    <div key={log.id} className="p-3 bg-muted/50 rounded-lg border">
+                                      <div className="flex items-center justify-between">
+                                        <span className="font-medium">{formatDuration(log.minutes)}</span>
+                                        <span className="text-xs text-muted-foreground">
+                                          {new Date(log.logged_at).toLocaleDateString()}
+                                        </span>
+                                      </div>
+                                      {log.notes && (
+                                        <p className="text-sm text-muted-foreground mt-1">{log.notes}</p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <Separator />
+                        </>
+                      )}
 
                       <div className="flex flex-wrap gap-2">
                         {selectedTicket.status === "closed" ? (
@@ -785,6 +975,53 @@ const Tickets = () => {
             )}
           </SheetContent>
         </Sheet>
+
+        <Dialog open={timeLogDialogOpen} onOpenChange={setTimeLogDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Log Time</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="timeLogMinutes">Time Spent (minutes)</Label>
+                <Input
+                  id="timeLogMinutes"
+                  type="number"
+                  min="1"
+                  value={timeLogMinutes}
+                  onChange={(e) => setTimeLogMinutes(e.target.value)}
+                  placeholder="e.g., 30"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="timeLogNotes">Notes (Optional)</Label>
+                <Textarea
+                  id="timeLogNotes"
+                  value={timeLogNotes}
+                  onChange={(e) => setTimeLogNotes(e.target.value)}
+                  placeholder="What did you work on?"
+                  rows={3}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleLogTime} className="flex-1">
+                  Log Time
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setTimeLogDialogOpen(false);
+                    setTimeLogMinutes("");
+                    setTimeLogNotes("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
