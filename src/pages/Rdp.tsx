@@ -343,7 +343,7 @@ const Rdp = () => {
     {
       key: "password",
       label: "Password",
-      render: () => "••••••••",
+      sortable: false,
     },
     {
       key: "email",

@@ -343,7 +343,7 @@ const Vpn = () => {
     {
       key: "password",
       label: "Password",
-      render: () => "••••••••",
+      sortable: false,
     },
     {
       key: "email",
