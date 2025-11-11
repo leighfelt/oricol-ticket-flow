@@ -13,6 +13,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface DirectoryUser {
   id: string;
@@ -27,17 +28,33 @@ interface DirectoryUser {
   updated_at: string;
 }
 
+interface VpnRdpUser {
+  id: string;
+  service_type: string;
+  username: string;
+  password: string;
+  email: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 const Users = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [users, setUsers] = useState<DirectoryUser[]>([]);
+  const [rdpUsers, setRdpUsers] = useState<VpnRdpUser[]>([]);
+  const [vpnUsers, setVpnUsers] = useState<VpnRdpUser[]>([]);
+  const [staffUsers, setStaffUsers] = useState<VpnRdpUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState<DirectoryUser | null>(null);
+  const [selectedUser, setSelectedUser] = useState<DirectoryUser | VpnRdpUser | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [userType, setUserType] = useState<"365" | "rdp" | "vpn" | "staff">("staff");
 
   useEffect(() => {
     checkAccess();
     fetchUsers();
+    fetchVpnRdpUsers();
   }, [navigate]);
 
   const checkAccess = async () => {
@@ -65,7 +82,6 @@ const Users = () => {
   };
 
   const fetchUsers = async () => {
-    setLoading(true);
     const { data, error } = await supabase
       .from("directory_users")
       .select("*")
@@ -74,21 +90,43 @@ const Users = () => {
     if (error) {
       toast({
         title: "Error",
-        description: "Failed to fetch users from directory",
+        description: "Failed to fetch 365 users",
         variant: "destructive",
       });
     } else {
       setUsers(data || []);
     }
+  };
+
+  const fetchVpnRdpUsers = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("vpn_rdp_credentials")
+      .select("*")
+      .order("username");
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch VPN/RDP users",
+        variant: "destructive",
+      });
+    } else {
+      const allData = data || [];
+      setRdpUsers(allData.filter(u => u.service_type === 'rdp'));
+      setVpnUsers(allData.filter(u => u.service_type === 'vpn'));
+      setStaffUsers(allData); // All VPN/RDP users are the most accurate staff list
+    }
     setLoading(false);
   };
 
-  const handleRowClick = (user: DirectoryUser) => {
+  const handleRowClick = (user: DirectoryUser | VpnRdpUser, type: "365" | "rdp" | "vpn" | "staff") => {
     setSelectedUser(user);
+    setUserType(type);
     setSheetOpen(true);
   };
 
-  const columns: Column<DirectoryUser>[] = [
+  const m365Columns: Column<DirectoryUser>[] = [
     {
       key: "display_name",
       label: "Name",
@@ -125,6 +163,36 @@ const Users = () => {
     },
   ];
 
+  const vpnRdpColumns: Column<VpnRdpUser>[] = [
+    {
+      key: "username",
+      label: "Username",
+      sortable: true,
+      filterPlaceholder: "Filter by username...",
+    },
+    {
+      key: "email",
+      label: "Email",
+      sortable: true,
+      filterPlaceholder: "Filter by email...",
+    },
+    {
+      key: "service_type",
+      label: "Service Type",
+      sortable: true,
+      render: (user) => (
+        <Badge variant="outline">
+          {user.service_type.toUpperCase()}
+        </Badge>
+      ),
+    },
+    {
+      key: "notes",
+      label: "Notes",
+      sortable: false,
+    },
+  ];
+
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
@@ -132,21 +200,75 @@ const Users = () => {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <UsersIcon className="w-8 h-8" />
-              Microsoft 365 Users
+              Users
             </h1>
-            <p className="text-muted-foreground">View all active users from Microsoft 365</p>
+            <p className="text-muted-foreground">View all users across different systems</p>
           </div>
         </div>
 
         {loading ? (
           <p>Loading users...</p>
         ) : (
-          <DataTable
-            data={users}
-            columns={columns}
-            onRowClick={handleRowClick}
-            searchKeys={["display_name", "email", "job_title", "department"]}
-          />
+          <Tabs defaultValue="staff" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="staff">Staff Users</TabsTrigger>
+              <TabsTrigger value="365">365 Users</TabsTrigger>
+              <TabsTrigger value="rdp">RDP Users</TabsTrigger>
+              <TabsTrigger value="vpn">VPN Users</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="staff" className="mt-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold">Staff Users (Most Accurate)</h2>
+                <p className="text-sm text-muted-foreground">Combined list from Forticlient and RDP users</p>
+              </div>
+              <DataTable
+                data={staffUsers}
+                columns={vpnRdpColumns}
+                onRowClick={(user) => handleRowClick(user, "staff")}
+                searchKeys={["username", "email", "notes"]}
+              />
+            </TabsContent>
+
+            <TabsContent value="365" className="mt-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold">Microsoft 365 Users</h2>
+                <p className="text-sm text-muted-foreground">Note: May not be accurate when staff leave</p>
+              </div>
+              <DataTable
+                data={users}
+                columns={m365Columns}
+                onRowClick={(user) => handleRowClick(user, "365")}
+                searchKeys={["display_name", "email", "job_title", "department"]}
+              />
+            </TabsContent>
+
+            <TabsContent value="rdp" className="mt-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold">RDP Users</h2>
+                <p className="text-sm text-muted-foreground">Users with RDP access credentials</p>
+              </div>
+              <DataTable
+                data={rdpUsers}
+                columns={vpnRdpColumns}
+                onRowClick={(user) => handleRowClick(user, "rdp")}
+                searchKeys={["username", "email", "notes"]}
+              />
+            </TabsContent>
+
+            <TabsContent value="vpn" className="mt-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold">VPN Users</h2>
+                <p className="text-sm text-muted-foreground">Users with VPN access credentials</p>
+              </div>
+              <DataTable
+                data={vpnUsers}
+                columns={vpnRdpColumns}
+                onRowClick={(user) => handleRowClick(user, "vpn")}
+                searchKeys={["username", "email", "notes"]}
+              />
+            </TabsContent>
+          </Tabs>
         )}
 
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -160,63 +282,118 @@ const Users = () => {
 
             {selectedUser && (
               <div className="space-y-6 mt-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Display Name</label>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedUser.display_name || "N/A"}
-                  </p>
-                </div>
+                {userType === "365" && "display_name" in selectedUser ? (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Display Name</label>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedUser.display_name || "N/A"}
+                      </p>
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Email</label>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedUser.email || "N/A"}
-                  </p>
-                </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Email</label>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedUser.email || "N/A"}
+                      </p>
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">User Principal Name</label>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedUser.user_principal_name || "N/A"}
-                  </p>
-                </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">User Principal Name</label>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedUser.user_principal_name || "N/A"}
+                      </p>
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Job Title</label>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedUser.job_title || "N/A"}
-                  </p>
-                </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Job Title</label>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedUser.job_title || "N/A"}
+                      </p>
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Department</label>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedUser.department || "N/A"}
-                  </p>
-                </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Department</label>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedUser.department || "N/A"}
+                      </p>
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Account Status</label>
-                  <div>
-                    <Badge variant={selectedUser.account_enabled ? "default" : "secondary"}>
-                      {selectedUser.account_enabled ? "Active" : "Inactive"}
-                    </Badge>
-                  </div>
-                </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Account Status</label>
+                      <div>
+                        <Badge variant={selectedUser.account_enabled ? "default" : "secondary"}>
+                          {selectedUser.account_enabled ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Azure AD ID</label>
-                  <p className="text-sm text-muted-foreground font-mono break-all">
-                    {selectedUser.aad_id || "N/A"}
-                  </p>
-                </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Azure AD ID</label>
+                      <p className="text-sm text-muted-foreground font-mono break-all">
+                        {selectedUser.aad_id || "N/A"}
+                      </p>
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Last Synced</label>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(selectedUser.updated_at).toLocaleString()}
-                  </p>
-                </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Last Synced</label>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(selectedUser.updated_at).toLocaleString()}
+                      </p>
+                    </div>
+                  </>
+                ) : "username" in selectedUser ? (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Username</label>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedUser.username}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Service Type</label>
+                      <Badge variant="outline">
+                        {selectedUser.service_type.toUpperCase()}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Email</label>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedUser.email || "N/A"}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Password</label>
+                      <p className="text-sm text-muted-foreground font-mono">
+                        {selectedUser.password}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Notes</label>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedUser.notes || "N/A"}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Created At</label>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(selectedUser.created_at).toLocaleString()}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Last Updated</label>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(selectedUser.updated_at).toLocaleString()}
+                      </p>
+                    </div>
+                  </>
+                ) : null}
               </div>
             )}
           </SheetContent>
