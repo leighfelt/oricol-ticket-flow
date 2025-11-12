@@ -4,6 +4,15 @@ A modern, professional helpdesk and asset management system built with React, Ty
 
 ![Oricol Helpdesk](https://github.com/user-attachments/assets/43b833f0-e11c-4776-a0ad-cba268f6aa18)
 
+## 🚀 New to this project? Start here!
+
+**👉 See [SETUP.md](./SETUP.md) for a step-by-step setup guide**
+
+Choose your path:
+- **Local Development** (free, no cloud) - See [LOCAL_SETUP.md](./LOCAL_SETUP.md)
+- **Cloud Free Tier** (Supabase + hosting) - See [DEPLOYMENT.md](./DEPLOYMENT.md)
+- **Quick Reference** - See [QUICKSTART.md](./QUICKSTART.md)
+
 ## Features
 
 ### 🎫 Ticket Management
