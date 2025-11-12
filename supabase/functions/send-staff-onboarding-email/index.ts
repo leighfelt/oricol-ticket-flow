@@ -228,44 +228,127 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send notification about VPN if needed
     if (needsVpn) {
+      // Generate unique confirmation token for Armata
+      const { data: armataTokenData } = await supabase.rpc('generate_confirmation_token');
+      const armataConfirmationToken = armataTokenData || crypto.randomUUID();
+      const armataWebConfirmUrl = `${Deno.env.get("SUPABASE_URL")?.replace('https://kwmeqvrmtivmljujwocp.supabase.co', 'https://kwmeqvrmtivmljujwocp.lovable.app')}/provider-confirm?token=${armataConfirmationToken}`;
+
       const vpnEmailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
           <p><strong>From:</strong> Graeme Smart &lt;Graeme.Smart@oricoles.co.za&gt;<br>
-          <strong>To:</strong> Armata VPN Support</p>
+          <strong>To:</strong> Armata Support &lt;support@armata.co.za&gt;</p>
           
-          <p>Hello,</p>
+          <p>Hi Armata Support,</p>
           
-          <p>We need to request a VPN profile for a ${isReplacement ? 'replacement' : 'new'} staff member:</p>
+          <p>Please can you add ${isReplacement ? 'a replacement' : 'a new'} user today to FortiClient?</p>
           
-          <ul>
-            <li><strong>Name:</strong> ${displayName}</li>
-            <li><strong>Email:</strong> ${email}</li>
-            <li><strong>Job Title:</strong> ${jobTitle}</li>
-            ${location ? `<li><strong>Location:</strong> ${location}</li>` : ''}
-            ${cellPhone ? `<li><strong>Cell Phone:</strong> ${cellPhone}</li>` : ''}
-          </ul>
+          <p>Login and password we seek are shown below:</p>
+          
+          <table style="border-collapse: collapse; margin: 20px 0; width: 100%; max-width: 600px;">
+            <thead>
+              <tr style="background-color: #f0f0f0;">
+                <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Suggested Login User Name</th>
+                <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Name</th>
+                <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Surname</th>
+                <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Password</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="border: 1px solid #ddd; padding: 12px;">${usernamePart}</td>
+                <td style="border: 1px solid #ddd; padding: 12px;">${firstName}</td>
+                <td style="border: 1px solid #ddd; padding: 12px;">${displayName.split(' ').slice(1).join(' ')}</td>
+                <td style="border: 1px solid #ddd; padding: 12px;">${password}</td>
+              </tr>
+            </tbody>
+          </table>
           
           ${isReplacement && oldUserName ? `
-            <p>This replaces the VPN profile for ${oldUserName} (${oldUserEmail}) who has left Oricol.</p>
+            <p><strong>Note:</strong> This replaces the VPN profile for ${oldUserName} (${oldUserEmail}) who has left Oricol.</p>
           ` : ''}
           
-          <p>Please create and configure the VPN profile at your earliest convenience.</p>
+          <div style="margin: 30px 0; padding: 20px; background-color: #f0f9ff; border-left: 4px solid #0ea5e9; border-radius: 4px;">
+            <p style="margin: 0 0 10px 0; font-weight: bold; color: #0369a1;">✓ Confirm Task Completion</p>
+            <p style="margin: 0 0 15px 0; font-size: 14px; color: #334155;">
+              Once you've completed the VPN setup for ${displayName}, please click the button below to confirm:
+            </p>
+            <a href="${armataWebConfirmUrl}" 
+               style="display: inline-block; padding: 12px 24px; background-color: #0ea5e9; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+              Confirm Setup Complete
+            </a>
+            <p style="margin: 15px 0 0 0; font-size: 12px; color: #64748b;">
+              This helps us track task completion and keep our records up to date.
+            </p>
+          </div>
           
           <p>Kind regards,<br>
           Graeme Smart</p>
         </div>
       `;
 
-      // Note: Replace with actual Armata email when available
-      console.log("VPN email would be sent to Armata (email address needed)");
-      // Uncomment when Armata email is available:
-      // await resend.emails.send({
-      //   from: "Oricol Staff Management <onboarding@resend.dev>",
-      //   to: ["armata-vpn-support@example.com"],
-      //   subject: `VPN Profile Request: ${displayName}`,
-      //   html: vpnEmailHtml,
-      // });
-      sentEmails.push("Armata (VPN)");
+      // Log Armata email to database before sending
+      const armataEmailLog = await supabase
+        .from("provider_emails")
+        .insert({
+          email_type: "vpn_setup",
+          provider: "armata",
+          subject: `VPN Profile Request: ${displayName}`,
+          to_addresses: ["support@armata.co.za"],
+          cc_addresses: [],
+          html_content: vpnEmailHtml,
+          staff_member_name: displayName,
+          staff_member_email: email,
+          request_data: requestData,
+          confirmation_token: armataConfirmationToken,
+          status: "pending"
+        })
+        .select()
+        .single();
+
+      if (armataEmailLog.error) {
+        console.error("Failed to log Armata email:", armataEmailLog.error);
+      }
+
+      // Send email to Armata
+      try {
+        const armataResponse = await resend.emails.send({
+          from: "Oricol Staff Management <onboarding@resend.dev>",
+          to: ["support@armata.co.za"],
+          subject: `VPN Profile Request: ${displayName}`,
+          html: vpnEmailHtml,
+        });
+
+        console.log("Armata email sent successfully:", armataResponse);
+
+        // Update log status to sent
+        if (armataEmailLog.data) {
+          await supabase
+            .from("provider_emails")
+            .update({
+              status: "sent",
+              sent_at: new Date().toISOString()
+            })
+            .eq("id", armataEmailLog.data.id);
+        }
+
+        sentEmails.push("Armata (VPN)");
+      } catch (error: any) {
+        console.error("Failed to send Armata email:", error);
+        
+        // Update log status to failed
+        if (armataEmailLog.data) {
+          await supabase
+            .from("provider_emails")
+            .update({
+              status: "failed",
+              error_message: error.message || error.toString()
+            })
+            .eq("id", armataEmailLog.data.id);
+        }
+        
+        // Don't throw - allow Qwerti email to still succeed
+        console.log("Continuing despite Armata email failure");
+      }
     }
 
     return new Response(
