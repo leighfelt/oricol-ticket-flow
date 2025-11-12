@@ -183,53 +183,60 @@ const Users = () => {
 
     const systemUser = selectedUser as SystemUser;
 
-    // Update profile
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({ full_name: editFullName })
-      .eq("user_id", systemUser.user_id);
+    // Only update profile if full_name has changed
+    const fullNameChanged = editFullName !== (systemUser.full_name || "");
+    if (fullNameChanged) {
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ full_name: editFullName })
+        .eq("user_id", systemUser.user_id);
 
-    if (profileError) {
-      toast({
-        title: "Error",
-        description: "Failed to update user profile",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Update roles - delete existing roles and insert new ones
-    const { error: deleteError } = await supabase
-      .from("user_roles")
-      .delete()
-      .eq("user_id", systemUser.user_id);
-
-    if (deleteError) {
-      toast({
-        title: "Error",
-        description: "Failed to update user roles",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (editRoles.length > 0) {
-      const rolesToInsert = editRoles.map(role => ({
-        user_id: systemUser.user_id,
-        role: role,
-      }));
-
-      const { error: insertError } = await supabase
-        .from("user_roles")
-        .insert(rolesToInsert);
-
-      if (insertError) {
+      if (profileError) {
         toast({
           title: "Error",
-          description: "Failed to assign user roles",
+          description: "Failed to update user profile",
           variant: "destructive",
         });
         return;
+      }
+    }
+
+    // Only update roles if they have changed
+    const rolesChanged = JSON.stringify([...editRoles].sort()) !== JSON.stringify([...systemUser.roles].sort());
+    if (rolesChanged) {
+      // Delete existing roles and insert new ones
+      const { error: deleteError } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", systemUser.user_id);
+
+      if (deleteError) {
+        toast({
+          title: "Error",
+          description: "Failed to update user roles",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (editRoles.length > 0) {
+        const rolesToInsert = editRoles.map(role => ({
+          user_id: systemUser.user_id,
+          role: role,
+        }));
+
+        const { error: insertError } = await supabase
+          .from("user_roles")
+          .insert(rolesToInsert);
+
+        if (insertError) {
+          toast({
+            title: "Error",
+            description: "Failed to assign user roles",
+            variant: "destructive",
+          });
+          return;
+        }
       }
     }
 
