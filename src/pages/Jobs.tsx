@@ -2,17 +2,17 @@ import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plus, Briefcase, CheckCircle2, FolderKanban, AlertCircle } from "lucide-react";
+import { Briefcase, CheckCircle2, FolderKanban, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DataTable } from "@/components/DataTable";
 import { Badge } from "@/components/ui/badge";
+import { AddJobDialog } from "@/components/AddJobDialog";
 
 const Jobs = () => {
   const [activeTab, setActiveTab] = useState("live");
 
-  const { data: jobs, isLoading } = useQuery({
+  const { data: jobs, isLoading, refetch } = useQuery({
     queryKey: ["jobs"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -129,10 +129,7 @@ const Jobs = () => {
               Manage all your jobs, projects, and update requests
             </p>
           </div>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Job
-          </Button>
+          <AddJobDialog onSuccess={() => refetch()} />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
