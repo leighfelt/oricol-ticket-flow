@@ -496,6 +496,66 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_emails: {
+        Row: {
+          cc_addresses: string[] | null
+          created_at: string
+          email_type: string
+          error_message: string | null
+          html_content: string
+          id: string
+          provider: string
+          request_data: Json | null
+          resend_count: number | null
+          sent_at: string | null
+          staff_member_email: string | null
+          staff_member_id: string | null
+          staff_member_name: string | null
+          status: string
+          subject: string
+          to_addresses: string[]
+          updated_at: string
+        }
+        Insert: {
+          cc_addresses?: string[] | null
+          created_at?: string
+          email_type: string
+          error_message?: string | null
+          html_content: string
+          id?: string
+          provider: string
+          request_data?: Json | null
+          resend_count?: number | null
+          sent_at?: string | null
+          staff_member_email?: string | null
+          staff_member_id?: string | null
+          staff_member_name?: string | null
+          status?: string
+          subject: string
+          to_addresses: string[]
+          updated_at?: string
+        }
+        Update: {
+          cc_addresses?: string[] | null
+          created_at?: string
+          email_type?: string
+          error_message?: string | null
+          html_content?: string
+          id?: string
+          provider?: string
+          request_data?: Json | null
+          resend_count?: number | null
+          sent_at?: string | null
+          staff_member_email?: string | null
+          staff_member_id?: string | null
+          staff_member_name?: string | null
+          status?: string
+          subject?: string
+          to_addresses?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       remote_clients: {
         Row: {
           computer_name: string

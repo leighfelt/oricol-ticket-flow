@@ -1,7 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -124,24 +128,82 @@ const handler = async (req: Request): Promise<Response> => {
       </div>
     `;
 
+    const sentEmails: string[] = [];
+
+    // Log email to database before sending
+    const emailLog = await supabase
+      .from("provider_emails")
+      .insert({
+        email_type: "staff_onboarding",
+        provider: "qwerti",
+        subject: `${isReplacement ? 'License Migration' : 'New Staff Member'}: ${displayName} - ${jobTitle}`,
+        to_addresses: ["support@qwerti.co.za", "shaun.chetty@qwerti.co.za"],
+        cc_addresses: [
+          "Jerusha.Naidoo@oricoles.co.za",
+          "craig@zerobitone.co.za",
+          "Andrew.Fernandes@oricoles.co.za",
+          "Peter.Allen@oricoles.co.za",
+          "Muhammed.Rassool@Oricoles.co.za"
+        ],
+        html_content: qwertiEmailHtml,
+        staff_member_name: displayName,
+        staff_member_email: email,
+        request_data: requestData,
+        status: "pending"
+      })
+      .select()
+      .single();
+
+    if (emailLog.error) {
+      console.error("Failed to log email:", emailLog.error);
+    }
+
     // Send email to Qwerti
-    const qwertiResponse = await resend.emails.send({
-      from: "Oricol Staff Management <onboarding@resend.dev>",
-      to: ["support@qwerti.co.za", "shaun.chetty@qwerti.co.za"],
-      cc: [
-        "Jerusha.Naidoo@oricoles.co.za",
-        "craig@zerobitone.co.za",
-        "Andrew.Fernandes@oricoles.co.za",
-        "Peter.Allen@oricoles.co.za",
-        "Muhammed.Rassool@Oricoles.co.za"
-      ],
-      subject: `${isReplacement ? 'License Migration' : 'New Staff Member'}: ${displayName} - ${jobTitle}`,
-      html: qwertiEmailHtml,
-    });
+    try {
+      const qwertiResponse = await resend.emails.send({
+        from: "Oricol Staff Management <onboarding@resend.dev>",
+        to: ["support@qwerti.co.za", "shaun.chetty@qwerti.co.za"],
+        cc: [
+          "Jerusha.Naidoo@oricoles.co.za",
+          "craig@zerobitone.co.za",
+          "Andrew.Fernandes@oricoles.co.za",
+          "Peter.Allen@oricoles.co.za",
+          "Muhammed.Rassool@Oricoles.co.za"
+        ],
+        subject: `${isReplacement ? 'License Migration' : 'New Staff Member'}: ${displayName} - ${jobTitle}`,
+        html: qwertiEmailHtml,
+      });
 
-    console.log("Qwerti email sent successfully:", qwertiResponse);
+      console.log("Qwerti email sent successfully:", qwertiResponse);
 
-    const sentEmails = ["Qwerti/Nymbis"];
+      // Update log status to sent
+      if (emailLog.data) {
+        await supabase
+          .from("provider_emails")
+          .update({
+            status: "sent",
+            sent_at: new Date().toISOString()
+          })
+          .eq("id", emailLog.data.id);
+      }
+
+      sentEmails.push("Qwerti/Nymbis");
+    } catch (error: any) {
+      console.error("Failed to send Qwerti email:", error);
+      
+      // Update log status to failed
+      if (emailLog.data) {
+        await supabase
+          .from("provider_emails")
+          .update({
+            status: "failed",
+            error_message: error.message || error.toString()
+          })
+          .eq("id", emailLog.data.id);
+      }
+      
+      throw error;
+    }
 
     // Send notification about VPN if needed
     if (needsVpn) {

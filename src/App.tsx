@@ -20,6 +20,7 @@ import RemoteClient from "./pages/RemoteClient";
 import RemoteClientSetup from "./pages/RemoteClientSetup";
 import Branches from "./pages/Branches";
 import BranchDetails from "./pages/BranchDetails";
+import ProviderEmails from "./pages/ProviderEmails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,7 +42,7 @@ const App = () => (
           <Route path="/hardware" element={<HardwareInventory />} />
           <Route path="/software" element={<SoftwareInventory />} />
           <Route path="/licenses" element={<Licenses />} />
-          <Route path="/microsoft365" element={<Microsoft365Dashboard />} />
+          <Route path="/microsoft-365" element={<Microsoft365Dashboard />} />
           <Route path="/vpn" element={<Vpn />} />
           <Route path="/rdp" element={<Rdp />} />
           <Route path="/remote-support" element={<RemoteSupport />} />
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/remote-client-setup" element={<RemoteClientSetup />} />
           <Route path="/branches" element={<Branches />} />
           <Route path="/branches/:branchId" element={<BranchDetails />} />
+          <Route path="/provider-emails" element={<ProviderEmails />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

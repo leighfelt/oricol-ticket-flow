@@ -53,12 +53,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     ...(isAdmin ? [
       { name: "Branches", href: "/branches", icon: Building2 },
       { name: "Remote Support", href: "/remote-support", icon: Video },
-      { name: "Microsoft 365", href: "/microsoft365", icon: Cloud },
+      { name: "Microsoft 365", href: "/microsoft-365", icon: Cloud },
       { name: "Hardware", href: "/hardware", icon: Monitor },
       { name: "Software", href: "/software", icon: Code },
       { name: "Licenses", href: "/licenses", icon: Key },
       { name: "VPN", href: "/vpn", icon: Key },
       { name: "RDP", href: "/rdp", icon: Monitor },
+      { name: "Provider Emails", href: "/provider-emails", icon: FileBarChart },
       { name: "Reports", href: "/reports", icon: FileBarChart },
       { name: "Users", href: "/users", icon: Users }
     ] : []),

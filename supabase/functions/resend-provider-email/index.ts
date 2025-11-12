@@ -1,0 +1,108 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { Resend } from "https://esm.sh/resend@4.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+interface ResendEmailRequest {
+  emailLogId: string;
+}
+
+const handler = async (req: Request): Promise<Response> => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { emailLogId }: ResendEmailRequest = await req.json();
+    console.log("Resending email for log ID:", emailLogId);
+
+    // Fetch email log
+    const { data: emailLog, error: fetchError } = await supabase
+      .from("provider_emails")
+      .select("*")
+      .eq("id", emailLogId)
+      .single();
+
+    if (fetchError || !emailLog) {
+      throw new Error("Email log not found");
+    }
+
+    // Send email
+    try {
+      const emailResponse = await resend.emails.send({
+        from: "Oricol Staff Management <onboarding@resend.dev>",
+        to: emailLog.to_addresses,
+        cc: emailLog.cc_addresses || [],
+        subject: emailLog.subject,
+        html: emailLog.html_content,
+      });
+
+      console.log("Email resent successfully:", emailResponse);
+
+      // Update log status
+      await supabase
+        .from("provider_emails")
+        .update({
+          status: "resent",
+          sent_at: new Date().toISOString(),
+          resend_count: (emailLog.resend_count || 0) + 1,
+          error_message: null
+        })
+        .eq("id", emailLogId);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "Email resent successfully"
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    } catch (sendError: any) {
+      console.error("Failed to resend email:", sendError);
+      
+      // Update log with new error
+      await supabase
+        .from("provider_emails")
+        .update({
+          error_message: sendError.message || sendError.toString(),
+          resend_count: (emailLog.resend_count || 0) + 1
+        })
+        .eq("id", emailLogId);
+      
+      throw sendError;
+    }
+  } catch (error: any) {
+    console.error("Error in resend-provider-email function:", error);
+    return new Response(
+      JSON.stringify({ 
+        error: error.message || "Failed to resend email",
+        details: error.toString()
+      }),
+      {
+        status: 500,
+        headers: { 
+          "Content-Type": "application/json", 
+          ...corsHeaders 
+        },
+      }
+    );
+  }
+};
+
+serve(handler);

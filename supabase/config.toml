@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.send-staff-onboarding-email]
 verify_jwt = false
+
+[functions.resend-provider-email]
+verify_jwt = false
