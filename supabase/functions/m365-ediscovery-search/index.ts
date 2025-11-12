@@ -262,7 +262,7 @@ async function executeEDiscoveryWorkflow(
   }
 
   // Step 2: Add custodians if specific mailboxes are requested
-  let dataSourceIds: string[] = [];
+  const dataSourceIds: string[] = [];
   
   if (mailboxes.length > 0) {
     console.log('Step 2: Adding custodians for specific mailboxes...');
