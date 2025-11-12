@@ -21,6 +21,7 @@ import RemoteClientSetup from "./pages/RemoteClientSetup";
 import Branches from "./pages/Branches";
 import BranchDetails from "./pages/BranchDetails";
 import ProviderEmails from "./pages/ProviderEmails";
+import ProviderConfirm from "./pages/ProviderConfirm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => (
           <Route path="/branches" element={<Branches />} />
           <Route path="/branches/:branchId" element={<BranchDetails />} />
           <Route path="/provider-emails" element={<ProviderEmails />} />
+          <Route path="/provider-confirm" element={<ProviderConfirm />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

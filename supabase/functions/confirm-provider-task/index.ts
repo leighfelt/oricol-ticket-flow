@@ -1,0 +1,125 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+interface ConfirmEmailRequest {
+  token: string;
+  providerName?: string;
+  notes?: string;
+}
+
+const handler = async (req: Request): Promise<Response> => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { token, providerName, notes }: ConfirmEmailRequest = await req.json();
+    
+    if (!token) {
+      return new Response(
+        JSON.stringify({ error: "Confirmation token is required" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log("Processing confirmation for token:", token);
+
+    // Find the email log by token
+    const { data: emailLog, error: fetchError } = await supabase
+      .from("provider_emails")
+      .select("*")
+      .eq("confirmation_token", token)
+      .single();
+
+    if (fetchError || !emailLog) {
+      console.error("Email log not found:", fetchError);
+      return new Response(
+        JSON.stringify({ error: "Invalid confirmation token" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Check if already confirmed
+    if (emailLog.confirmed_at) {
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: "This task was already confirmed",
+          alreadyConfirmed: true,
+          confirmedAt: emailLog.confirmed_at,
+          confirmedBy: emailLog.confirmed_by
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Update confirmation status
+    const { error: updateError } = await supabase
+      .from("provider_emails")
+      .update({
+        confirmed_at: new Date().toISOString(),
+        confirmed_by: providerName || emailLog.provider,
+        provider_notes: notes,
+      })
+      .eq("id", emailLog.id);
+
+    if (updateError) {
+      console.error("Failed to update confirmation:", updateError);
+      throw updateError;
+    }
+
+    console.log("Email confirmed successfully:", emailLog.id);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        message: "Task confirmed successfully",
+        staffMemberName: emailLog.staff_member_name,
+        emailType: emailLog.email_type
+      }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      }
+    );
+  } catch (error: any) {
+    console.error("Error in confirm-provider-task function:", error);
+    return new Response(
+      JSON.stringify({ 
+        error: error.message || "Failed to confirm task",
+        details: error.toString()
+      }),
+      {
+        status: 500,
+        headers: { 
+          "Content-Type": "application/json", 
+          ...corsHeaders 
+        },
+      }
+    );
+  }
+};
+
+serve(handler);

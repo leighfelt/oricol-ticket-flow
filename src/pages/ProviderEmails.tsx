@@ -42,6 +42,10 @@ interface ProviderEmail {
   staff_member_name: string | null;
   staff_member_email: string | null;
   request_data: any;
+  confirmation_token: string | null;
+  confirmed_at: string | null;
+  confirmed_by: string | null;
+  provider_notes: string | null;
 }
 
 export default function ProviderEmails() {
@@ -165,6 +169,7 @@ export default function ProviderEmails() {
           <TableHead>Staff Member</TableHead>
           <TableHead>Subject</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead>Confirmed</TableHead>
           <TableHead>Resend Count</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
@@ -172,7 +177,7 @@ export default function ProviderEmails() {
       <TableBody>
         {emails.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={7} className="text-center text-muted-foreground">
+            <TableCell colSpan={8} className="text-center text-muted-foreground">
               No emails found
             </TableCell>
           </TableRow>
@@ -193,6 +198,21 @@ export default function ProviderEmails() {
               </TableCell>
               <TableCell className="max-w-xs truncate">{email.subject}</TableCell>
               <TableCell>{getStatusBadge(email.status)}</TableCell>
+              <TableCell>
+                {email.confirmed_at ? (
+                  <div className="flex flex-col">
+                    <Badge className="bg-green-500 w-fit">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Yes
+                    </Badge>
+                    <span className="text-xs text-muted-foreground mt-1">
+                      {format(new Date(email.confirmed_at), "MMM d, HH:mm")}
+                    </span>
+                  </div>
+                ) : (
+                  <Badge variant="outline">Pending</Badge>
+                )}
+              </TableCell>
               <TableCell className="text-center">{email.resend_count}</TableCell>
               <TableCell>
                 <div className="flex gap-2">
@@ -397,6 +417,33 @@ export default function ProviderEmails() {
                 <div>
                   <h4 className="text-sm font-semibold mb-1 text-destructive">Error Message</h4>
                   <p className="text-sm bg-destructive/10 p-3 rounded">{selectedEmail.error_message}</p>
+                </div>
+              )}
+
+              {selectedEmail.confirmed_at && (
+                <div className="bg-green-50 border border-green-200 rounded p-4">
+                  <h4 className="text-sm font-semibold mb-2 text-green-800 flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    Task Confirmed
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-green-700">Confirmed At:</span>
+                      <p className="font-medium">{format(new Date(selectedEmail.confirmed_at), "PPpp")}</p>
+                    </div>
+                    {selectedEmail.confirmed_by && (
+                      <div>
+                        <span className="text-green-700">Confirmed By:</span>
+                        <p className="font-medium">{selectedEmail.confirmed_by}</p>
+                      </div>
+                    )}
+                  </div>
+                  {selectedEmail.provider_notes && (
+                    <div className="mt-2">
+                      <span className="text-green-700">Provider Notes:</span>
+                      <p className="text-sm mt-1">{selectedEmail.provider_notes}</p>
+                    </div>
+                  )}
                 </div>
               )}
 

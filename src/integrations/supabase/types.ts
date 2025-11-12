@@ -499,12 +499,16 @@ export type Database = {
       provider_emails: {
         Row: {
           cc_addresses: string[] | null
+          confirmation_token: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
           created_at: string
           email_type: string
           error_message: string | null
           html_content: string
           id: string
           provider: string
+          provider_notes: string | null
           request_data: Json | null
           resend_count: number | null
           sent_at: string | null
@@ -518,12 +522,16 @@ export type Database = {
         }
         Insert: {
           cc_addresses?: string[] | null
+          confirmation_token?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           email_type: string
           error_message?: string | null
           html_content: string
           id?: string
           provider: string
+          provider_notes?: string | null
           request_data?: Json | null
           resend_count?: number | null
           sent_at?: string | null
@@ -537,12 +545,16 @@ export type Database = {
         }
         Update: {
           cc_addresses?: string[] | null
+          confirmation_token?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           email_type?: string
           error_message?: string | null
           html_content?: string
           id?: string
           provider?: string
+          provider_notes?: string | null
           request_data?: Json | null
           resend_count?: number | null
           sent_at?: string | null
@@ -927,6 +939,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_confirmation_token: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

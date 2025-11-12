@@ -83,6 +83,12 @@ const handler = async (req: Request): Promise<Response> => {
       year: 'numeric' 
     });
 
+    // Generate unique confirmation token
+    const { data: tokenData } = await supabase.rpc('generate_confirmation_token');
+    const confirmationToken = tokenData || crypto.randomUUID();
+    const confirmationUrl = `${supabaseUrl.replace('/rest/v1', '')}/functions/v1/confirm-provider-task?token=${confirmationToken}`;
+    const webConfirmUrl = `${Deno.env.get("SUPABASE_URL")?.replace('https://kwmeqvrmtivmljujwocp.supabase.co', 'https://kwmeqvrmtivmljujwocp.lovable.app')}/provider-confirm?token=${confirmationToken}`;
+
     // Generate Qwerti email content
     const qwertiEmailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
@@ -123,6 +129,20 @@ const handler = async (req: Request): Promise<Response> => {
         
         <p>If I have missed anything, please feel free to reach out to me or Jerusha and we can resolve very promptly.</p>
         
+        <div style="margin: 30px 0; padding: 20px; background-color: #f0f9ff; border-left: 4px solid #0ea5e9; border-radius: 4px;">
+          <p style="margin: 0 0 10px 0; font-weight: bold; color: #0369a1;">✓ Confirm Task Completion</p>
+          <p style="margin: 0 0 15px 0; font-size: 14px; color: #334155;">
+            Once you've completed the setup for ${displayName}, please click the button below to confirm:
+          </p>
+          <a href="${webConfirmUrl}" 
+             style="display: inline-block; padding: 12px 24px; background-color: #0ea5e9; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+            Confirm Setup Complete
+          </a>
+          <p style="margin: 15px 0 0 0; font-size: 12px; color: #64748b;">
+            This helps us track task completion and keep our records up to date.
+          </p>
+        </div>
+        
         <p>Kind regards<br>
         Graeme Smart</p>
       </div>
@@ -149,6 +169,7 @@ const handler = async (req: Request): Promise<Response> => {
         staff_member_name: displayName,
         staff_member_email: email,
         request_data: requestData,
+        confirmation_token: confirmationToken,
         status: "pending"
       })
       .select()
