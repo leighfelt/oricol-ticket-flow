@@ -1,4 +1,6 @@
-project_id = "kwmeqvrmtivmljujwocp"
+# project_id is used for linking to remote Supabase project
+# Comment out for local development
+# project_id = "kwmeqvrmtivmljujwocp"
 
 [functions.route-ticket-email]
 verify_jwt = false
