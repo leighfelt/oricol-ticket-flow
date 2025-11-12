@@ -4,6 +4,20 @@ A modern, professional helpdesk and asset management system built with React, Ty
 
 ![Oricol Helpdesk](https://github.com/user-attachments/assets/43b833f0-e11c-4776-a0ad-cba268f6aa18)
 
+## 🚀 Working with this project
+
+**This app runs on Lovable** - All code changes sync automatically between GitHub and Lovable.
+
+### Making Changes:
+1. **Edit code on GitHub** - Make changes here and commit them
+2. **Lovable syncs automatically** - Your changes appear in Lovable
+3. **App updates live** - The app running on Lovable updates with your changes
+
+### Additional Setup Options:
+- **Local Development** (optional) - See [LOCAL_SETUP.md](./LOCAL_SETUP.md)
+- **Alternative Deployment** (optional) - See [DEPLOYMENT.md](./DEPLOYMENT.md)
+- **Quick Reference** - See [QUICKSTART.md](./QUICKSTART.md)
+
 ## Features
 
 ### 🎫 Ticket Management
@@ -43,16 +57,31 @@ A modern, professional helpdesk and asset management system built with React, Ty
 
 ## Getting Started
 
+### 🚀 Quick Start Options
+
+**Choose your setup:**
+
+1. **💰 $0 Cost - Local Development** (Recommended for testing)
+   - Run 100% free on your computer
+   - See [LOCAL_SETUP.md](./LOCAL_SETUP.md) for step-by-step guide
+   - Uses Docker to run Supabase locally
+
+2. **☁️ $0 Cost - Cloud Free Tier** (Recommended for production)
+   - Use Supabase free tier (500MB database, no credit card required)
+   - See [DEPLOYMENT.md](./DEPLOYMENT.md) for all free hosting options
+   - Deploy to Netlify, Vercel, or Cloudflare Pages (all free)
+
 ### Prerequisites
 - Node.js 18+ and npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-- Supabase account and project (included in this setup)
+- **For local development**: [Docker Desktop](https://www.docker.com/products/docker-desktop) (free)
+- **For cloud development**: Free Supabase account at [supabase.com](https://supabase.com)
 
-### Installation
+### Quick Installation (Cloud - Supabase Free Tier)
 
 1. **Clone the repository**
    ```sh
-   git clone https://github.com/craigfelt/oricol-ticket-flow.git
-   cd oricol-ticket-flow
+   git clone https://github.com/craigfelt/oricol-ticket-flow-34e64301.git
+   cd oricol-ticket-flow-34e64301
    ```
 
 2. **Install dependencies**
@@ -62,12 +91,14 @@ A modern, professional helpdesk and asset management system built with React, Ty
 
 3. **Environment Setup**
    
-   The `.env` file is already configured with Supabase credentials:
+   Create a `.env` file with your Supabase credentials:
    ```env
-   VITE_SUPABASE_URL=https://kwmeqvrmtivmljujwocp.supabase.co
-   VITE_SUPABASE_PUBLISHABLE_KEY=<your-key>
-   VITE_SUPABASE_PROJECT_ID=kwmeqvrmtivmljujwocp
+   VITE_SUPABASE_URL=<your-supabase-url>
+   VITE_SUPABASE_PUBLISHABLE_KEY=<your-anon-key>
+   VITE_SUPABASE_PROJECT_ID=<your-project-id>
    ```
+   
+   Get these from your free Supabase project at [supabase.com](https://supabase.com)
 
 4. **Start the development server**
    ```sh
@@ -80,6 +111,41 @@ A modern, professional helpdesk and asset management system built with React, Ty
    ```sh
    npm run build
    ```
+
+### Quick Installation (Local - 100% Free, No Cloud)
+
+1. **Clone and install**
+   ```sh
+   git clone https://github.com/craigfelt/oricol-ticket-flow-34e64301.git
+   cd oricol-ticket-flow-34e64301
+   npm install
+   ```
+
+2. **Start local Supabase** (requires Docker)
+   ```sh
+   npx supabase start
+   ```
+   
+   This will output your local credentials including the anon key
+
+3. **Create `.env.local`**
+   ```env
+   VITE_SUPABASE_URL=http://localhost:54321
+   VITE_SUPABASE_PUBLISHABLE_KEY=<anon-key-from-step-2>
+   ```
+
+4. **Start the app**
+   ```sh
+   npm run dev
+   ```
+   
+   The app will be available at http://localhost:8080
+   
+   Access Supabase Studio (database admin) at http://localhost:54323
+
+For detailed instructions, see:
+- **[LOCAL_SETUP.md](./LOCAL_SETUP.md)** - Complete local development guide
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Free hosting and deployment options
 
 ### First Steps
 1. Create an account using the sign-up form
@@ -242,11 +308,29 @@ For support, please create a ticket in the system or contact the development tea
 
 ## Deployment
 
-## How can I deploy this project?
+### 🆓 Free Deployment Options
+
+You can deploy this app **completely free** using various hosting platforms:
+
+#### Backend Options (Database + API)
+- **Supabase Free Tier** - 500MB database, unlimited API requests ([guide](./DEPLOYMENT.md#option-1-free-supabase-tier-recommended-for-beginners))
+- **Railway.app Free Tier** - 500 hours/month, PostgreSQL included ([guide](./DEPLOYMENT.md#railwayapp-free-tier))
+- **Render.com Free Tier** - Free PostgreSQL + web service ([guide](./DEPLOYMENT.md#rendercom-free-tier))
+- **Local Supabase on Docker** - 100% free, self-hosted ([guide](./LOCAL_SETUP.md))
+
+#### Frontend Options
+- **Netlify** - 100GB bandwidth/month ([guide](./DEPLOYMENT.md#1-netlify-free-tier))
+- **Vercel** - 100GB bandwidth/month ([guide](./DEPLOYMENT.md#2-vercel-free-tier---no-premium-required))
+- **Cloudflare Pages** - Unlimited bandwidth ([guide](./DEPLOYMENT.md#4-cloudflare-pages-free))
+- **GitHub Pages** - Free static hosting ([guide](./DEPLOYMENT.md#1-github-pages-static-hosting))
+
+**See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment instructions.**
+
+### How can I deploy this project via Lovable?
 
 Simply open [Lovable](https://lovable.dev/projects/c75c70a7-c13d-4879-a8af-bbb8cc076141) and click on Share -> Publish.
 
-## Can I connect a custom domain to my Lovable project?
+### Can I connect a custom domain to my Lovable project?
 
 Yes, you can!
 
