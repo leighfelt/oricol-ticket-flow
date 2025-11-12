@@ -73,6 +73,51 @@ export type Database = {
           },
         ]
       }
+      branches: {
+        Row: {
+          address: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          postal_code: string | null
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       directory_users: {
         Row: {
           aad_id: string | null
@@ -246,6 +291,109 @@ export type Database = {
           vendor?: string
         }
         Relationships: []
+      }
+      network_devices: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          device_name: string
+          device_type: string
+          id: string
+          ip_address: string | null
+          location: string | null
+          mac_address: string | null
+          manufacturer: string | null
+          model: string | null
+          notes: string | null
+          purchase_date: string | null
+          serial_number: string | null
+          status: string
+          updated_at: string
+          warranty_expires: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          device_name: string
+          device_type: string
+          id?: string
+          ip_address?: string | null
+          location?: string | null
+          mac_address?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          status?: string
+          updated_at?: string
+          warranty_expires?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          device_name?: string
+          device_type?: string
+          id?: string
+          ip_address?: string | null
+          location?: string | null
+          mac_address?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          status?: string
+          updated_at?: string
+          warranty_expires?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "network_devices_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      network_diagrams: {
+        Row: {
+          branch_id: string
+          created_at: string
+          description: string | null
+          diagram_name: string
+          diagram_url: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          description?: string | null
+          diagram_name: string
+          diagram_url: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          description?: string | null
+          diagram_name?: string
+          diagram_url?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "network_diagrams_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
