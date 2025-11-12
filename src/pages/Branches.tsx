@@ -2,10 +2,10 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Building2, MapPin, Phone, Mail, Upload, Download } from "lucide-react";
+import { Plus, Building2, MapPin, Phone, Mail, Upload, Download, Users as UsersIcon, Monitor, Network } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -46,6 +46,45 @@ const Branches = () => {
       if (error) throw error;
       return data;
     },
+  });
+
+  // Fetch statistics for all branches
+  const { data: branchStats } = useQuery({
+    queryKey: ["branch-statistics"],
+    queryFn: async () => {
+      if (!branches) return {};
+
+      const stats: Record<string, { users: number; devices: number; networkDevices: number }> = {};
+
+      for (const branch of branches) {
+        // Count directory users (department field matches branch name)
+        const { count: userCount } = await supabase
+          .from("directory_users")
+          .select("*", { count: "exact", head: true })
+          .eq("department", branch.name);
+
+        // Count hardware devices (branch field matches branch name)
+        const { count: deviceCount } = await supabase
+          .from("hardware_inventory")
+          .select("*", { count: "exact", head: true })
+          .eq("branch", branch.name);
+
+        // Count network devices (branch_id matches)
+        const { count: networkDeviceCount } = await supabase
+          .from("network_devices")
+          .select("*", { count: "exact", head: true })
+          .eq("branch_id", branch.id);
+
+        stats[branch.id] = {
+          users: userCount || 0,
+          devices: deviceCount || 0,
+          networkDevices: networkDeviceCount || 0,
+        };
+      }
+
+      return stats;
+    },
+    enabled: !!branches && branches.length > 0,
   });
 
   const createBranch = useMutation({
@@ -300,44 +339,80 @@ const Branches = () => {
           <div className="text-center text-muted-foreground">Loading branches...</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {branches?.map((branch) => (
-              <Card
-                key={branch.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => navigate(`/branches/${branch.id}`)}
-              >
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Building2 className="w-5 h-5 text-primary" />
-                    {branch.name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {branch.address && (
-                    <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <MapPin className="w-4 h-4 mt-0.5" />
-                      <span>
-                        {branch.address}
-                        {branch.city && `, ${branch.city}`}
-                        {branch.state && `, ${branch.state}`}
-                      </span>
+            {branches?.map((branch) => {
+              const stats = branchStats?.[branch.id];
+              return (
+                <Card
+                  key={branch.id}
+                  className="cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => navigate(`/branches/${branch.id}`)}
+                >
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Building2 className="w-5 h-5 text-primary" />
+                      {branch.name}
+                    </CardTitle>
+                    {branch.city && (
+                      <CardDescription>{branch.city}</CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Statistics */}
+                    {stats && (
+                      <div className="grid grid-cols-3 gap-2 p-3 bg-muted/50 rounded-lg">
+                        <div className="text-center">
+                          <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
+                            <UsersIcon className="w-3 h-3" />
+                          </div>
+                          <div className="text-lg font-bold text-foreground">{stats.users}</div>
+                          <div className="text-xs text-muted-foreground">Users</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
+                            <Monitor className="w-3 h-3" />
+                          </div>
+                          <div className="text-lg font-bold text-foreground">{stats.devices}</div>
+                          <div className="text-xs text-muted-foreground">Devices</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
+                            <Network className="w-3 h-3" />
+                          </div>
+                          <div className="text-lg font-bold text-foreground">{stats.networkDevices}</div>
+                          <div className="text-xs text-muted-foreground">Network</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Contact Info */}
+                    <div className="space-y-2">
+                      {branch.address && (
+                        <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                          <span>
+                            {branch.address}
+                            {branch.city && `, ${branch.city}`}
+                            {branch.state && `, ${branch.state}`}
+                          </span>
+                        </div>
+                      )}
+                      {branch.phone && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Phone className="w-4 h-4 flex-shrink-0" />
+                          <span>{branch.phone}</span>
+                        </div>
+                      )}
+                      {branch.email && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Mail className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">{branch.email}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {branch.phone && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="w-4 h-4" />
-                      <span>{branch.phone}</span>
-                    </div>
-                  )}
-                  {branch.email && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Mail className="w-4 h-4" />
-                      <span>{branch.email}</span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
