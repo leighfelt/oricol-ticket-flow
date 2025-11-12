@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
-import { Users as UsersIcon, Search } from "lucide-react";
+import { Users as UsersIcon, Search, Upload, Download } from "lucide-react";
 import { DataTable, type Column } from "@/components/DataTable";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -52,6 +53,8 @@ const Users = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [userType, setUserType] = useState<"365" | "rdp" | "vpn" | "staff">("staff");
   const [globalSearch, setGlobalSearch] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [currentTab, setCurrentTab] = useState("staff");
 
   useEffect(() => {
     checkAccess();
@@ -145,6 +148,73 @@ const Users = () => {
   const filteredVpnUsers = filterUsers(vpnUsers, ["username", "email", "notes"]);
   const filteredStaffUsers = filterUsers(staffUsers, ["username", "email", "notes"]);
 
+  const downloadCSVTemplate = (type: string) => {
+    let headers: string[];
+    let example: string;
+    
+    if (type === '365') {
+      headers = ['display_name', 'email', 'user_principal_name', 'job_title', 'department', 'account_enabled'];
+      example = 'John Doe,john@example.com,john@example.com,Manager,IT,true';
+    } else {
+      headers = ['username', 'email', 'service_type', 'password', 'notes'];
+      example = 'jdoe,john@example.com,rdp,SecurePass123,Sample notes';
+    }
+    
+    const csv = headers.join(',') + '\n' + example;
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${type}_users_template.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    toast({ title: "Template downloaded" });
+  };
+
+  const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const text = event.target?.result as string;
+      const lines = text.split('\n');
+      const headers = lines[0].split(',').map(h => h.trim());
+      
+      const usersToImport = [];
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const values = lines[i].split(',').map(v => v.trim());
+        const user: any = {};
+        headers.forEach((header, index) => {
+          if (header === 'account_enabled') {
+            user[header] = values[index] === 'true';
+          } else {
+            user[header] = values[index] || null;
+          }
+        });
+        usersToImport.push(user);
+      }
+
+      const tableName = currentTab === '365' ? 'directory_users' : 'vpn_rdp_credentials';
+      const { error } = await supabase.from(tableName).insert(usersToImport);
+      
+      if (error) {
+        console.error('Error importing users:', error);
+        toast({ title: "Failed to import users", variant: "destructive" });
+      } else {
+        toast({ title: `Imported ${usersToImport.length} users` });
+        if (currentTab === '365') {
+          fetchUsers();
+        } else {
+          fetchVpnRdpUsers();
+        }
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const m365Columns: Column<DirectoryUser>[] = [
     {
       key: "display_name",
@@ -223,6 +293,23 @@ const Users = () => {
             </h1>
             <p className="text-muted-foreground">View all users across different systems</p>
           </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => downloadCSVTemplate(currentTab)}>
+              <Download className="h-4 w-4 mr-2" />
+              Download Template
+            </Button>
+            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import CSV
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleCSVImport}
+              className="hidden"
+            />
+          </div>
         </div>
 
         {loading ? (
@@ -239,7 +326,7 @@ const Users = () => {
               />
             </div>
 
-            <Tabs defaultValue="staff" className="w-full">
+            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="staff">
                   Staff Users {globalSearch && `(${filteredStaffUsers.length})`}

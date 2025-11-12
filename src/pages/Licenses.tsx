@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,11 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Trash2, Edit, Loader2 } from "lucide-react";
+import { Trash2, Edit, Loader2, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
 import { DataTable } from "@/components/DataTable";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Licenses = () => {
   const [licenses, setLicenses] = useState<any[]>([]);
@@ -24,6 +25,7 @@ const Licenses = () => {
   const [editMode, setEditMode] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     license_name: "",
     license_type: "",
@@ -187,6 +189,63 @@ const Licenses = () => {
     }
   };
 
+  const downloadCSVTemplate = () => {
+    const headers = ['license_name', 'license_type', 'vendor', 'license_key', 'total_seats', 'used_seats', 'purchase_date', 'renewal_date', 'cost', 'status', 'notes'];
+    const csv = headers.join(',') + '\n' + 'Example License,Microsoft 365,Microsoft,XXXXX-XXXXX-XXXXX,100,50,2024-01-01,2025-01-01,5000,active,Sample notes';
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'licenses_template.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+    toast.success('Template downloaded');
+  };
+
+  const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const text = event.target?.result as string;
+      const lines = text.split('\n');
+      const headers = lines[0].split(',').map(h => h.trim());
+      
+      const licensesToImport = [];
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const values = lines[i].split(',').map(v => v.trim());
+        const license: any = {};
+        headers.forEach((header, index) => {
+          if (header === 'total_seats' || header === 'used_seats') {
+            license[header] = parseInt(values[index]) || 0;
+          } else if (header === 'cost') {
+            license[header] = values[index] ? parseFloat(values[index]) : null;
+          } else {
+            license[header] = values[index] || null;
+          }
+        });
+        licensesToImport.push(license);
+      }
+
+      const { error } = await supabase.from('licenses').insert(licensesToImport);
+      
+      if (error) {
+        console.error('Error importing licenses:', error);
+        toast.error('Failed to import licenses');
+      } else {
+        toast.success(`Imported ${licensesToImport.length} licenses`);
+        fetchLicenses();
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const microsoft365Licenses = licenses.filter(l => l.license_type === 'Microsoft 365');
+  const rdpLicenses = licenses.filter(l => l.license_type === 'RDP');
+
   return (
     <DashboardLayout>
       <div className="p-8">
@@ -197,6 +256,21 @@ const Licenses = () => {
           </div>
           {isAdmin && (
             <div className="flex gap-2">
+              <Button variant="outline" onClick={downloadCSVTemplate}>
+                <Download className="h-4 w-4 mr-2" />
+                Download Template
+              </Button>
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="h-4 w-4 mr-2" />
+                Import CSV
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                onChange={handleCSVImport}
+                className="hidden"
+              />
               <Button 
                 variant="outline" 
                 onClick={handleRemoveDuplicates}
@@ -243,14 +317,21 @@ const Licenses = () => {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>All Licenses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DataTable
-              data={licenses}
-              columns={[
+        <Tabs defaultValue="365" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="365">Microsoft 365 ({microsoft365Licenses.length})</TabsTrigger>
+            <TabsTrigger value="rdp">RDP ({rdpLicenses.length})</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="365" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Microsoft 365 Licenses</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DataTable
+                  data={microsoft365Licenses}
+                  columns={[
                 {
                   key: "license_name",
                   label: "License Name",
@@ -312,12 +393,86 @@ const Licenses = () => {
                     </Badge>
                   ),
                 },
-              ]}
-              onRowClick={handleLicenseClick}
-              searchKeys={["license_name", "vendor", "license_type"]}
-            />
-          </CardContent>
-        </Card>
+                  ]}
+                  onRowClick={handleLicenseClick}
+                  searchKeys={["license_name", "vendor"]}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="rdp" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>RDP Licenses</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DataTable
+                  data={rdpLicenses}
+                  columns={[
+                    {
+                      key: "license_name",
+                      label: "License Name",
+                      filterPlaceholder: "Filter by name...",
+                      sortable: true,
+                    },
+                    {
+                      key: "vendor",
+                      label: "Vendor",
+                      filterPlaceholder: "Filter by vendor...",
+                      sortable: true,
+                    },
+                    {
+                      key: "used_seats",
+                      label: "Seats",
+                      sortable: true,
+                      render: (value, row) => `${row.used_seats} / ${row.total_seats}`,
+                    },
+                    {
+                      key: "usage",
+                      label: "Usage",
+                      sortable: false,
+                      render: (_, row) => {
+                        const usagePercent = (row.used_seats / row.total_seats) * 100;
+                        return (
+                          <div className="flex items-center gap-2">
+                            <Progress value={usagePercent} className="w-20" />
+                            <span className="text-sm">{usagePercent.toFixed(0)}%</span>
+                          </div>
+                        );
+                      },
+                    },
+                    {
+                      key: "renewal_date",
+                      label: "Renewal Date",
+                      sortable: true,
+                      render: (value) => value ? new Date(value).toLocaleDateString() : '-',
+                    },
+                    {
+                      key: "cost",
+                      label: "Cost",
+                      sortable: true,
+                      render: (value) => value ? `R${value.toFixed(2)}` : '-',
+                    },
+                    {
+                      key: "status",
+                      label: "Status",
+                      sortable: true,
+                      filterPlaceholder: "Filter by status...",
+                      render: (value) => (
+                        <Badge variant={value === 'active' ? 'default' : 'secondary'}>
+                          {value}
+                        </Badge>
+                      ),
+                    },
+                  ]}
+                  onRowClick={handleLicenseClick}
+                  searchKeys={["license_name", "vendor"]}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetContent className="overflow-y-auto">
