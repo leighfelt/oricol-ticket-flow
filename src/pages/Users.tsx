@@ -93,13 +93,13 @@ const Users = () => {
       .from("user_roles")
       .select("role")
       .eq("user_id", session.user.id)
-      .in("role", ["admin", "ceo", "support_staff"])
+      .eq("role", "admin")
       .maybeSingle();
 
     if (!data) {
       toast({
         title: "Access Denied",
-        description: "You must be an admin, CEO, or support staff to access this page",
+        description: "You must be an admin to access System Users page",
         variant: "destructive",
       });
       navigate("/dashboard");
