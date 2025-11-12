@@ -4,13 +4,18 @@ A modern, professional helpdesk and asset management system built with React, Ty
 
 ![Oricol Helpdesk](https://github.com/user-attachments/assets/43b833f0-e11c-4776-a0ad-cba268f6aa18)
 
-## 🚀 New to this project? Start here!
+## 🚀 Working with this project
 
-**👉 See [SETUP.md](./SETUP.md) for a step-by-step setup guide**
+**This app runs on Lovable** - All code changes sync automatically between GitHub and Lovable.
 
-Choose your path:
-- **Local Development** (free, no cloud) - See [LOCAL_SETUP.md](./LOCAL_SETUP.md)
-- **Cloud Free Tier** (Supabase + hosting) - See [DEPLOYMENT.md](./DEPLOYMENT.md)
+### Making Changes:
+1. **Edit code on GitHub** - Make changes here and commit them
+2. **Lovable syncs automatically** - Your changes appear in Lovable
+3. **App updates live** - The app running on Lovable updates with your changes
+
+### Additional Setup Options:
+- **Local Development** (optional) - See [LOCAL_SETUP.md](./LOCAL_SETUP.md)
+- **Alternative Deployment** (optional) - See [DEPLOYMENT.md](./DEPLOYMENT.md)
 - **Quick Reference** - See [QUICKSTART.md](./QUICKSTART.md)
 
 ## Features
