@@ -27,6 +27,8 @@ const BranchDetails = () => {
   const queryClient = useQueryClient();
   const [currentTab, setCurrentTab] = useState("overview");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const devicesFileInputRef = useRef<HTMLInputElement>(null);
+  const usersFileInputRef = useRef<HTMLInputElement>(null);
   const [isNetworkDeviceDialogOpen, setIsNetworkDeviceDialogOpen] = useState(false);
   const [networkDeviceForm, setNetworkDeviceForm] = useState({
     device_name: "",
@@ -148,6 +150,12 @@ const BranchDetails = () => {
     if (type === "network_devices") {
       headers = ["device_name", "device_type", "manufacturer", "model", "serial_number", "ip_address", "mac_address", "location", "status", "notes"];
       example = ["Office Printer 1", "printer", "HP", "LaserJet Pro", "SN123456", "192.168.1.100", "00:1A:2B:3C:4D:5E", "Floor 1", "active", "Main printer"];
+    } else if (type === "users") {
+      headers = ["display_name", "email", "user_principal_name", "job_title", "department", "account_enabled"];
+      example = ["John Doe", "john.doe@company.com", "john.doe@company.com", "Manager", branch?.name || "", "true"];
+    } else if (type === "devices") {
+      headers = ["device_name", "device_type", "manufacturer", "model", "serial_number", "os", "os_version", "processor", "ram_gb", "storage_gb", "branch", "location", "status"];
+      example = ["Laptop-001", "Laptop", "Dell", "Latitude 5520", "SN789456", "Windows 11", "23H2", "Intel Core i7", "16", "512", branch?.name || "", "Office", "active"];
     } else {
       headers = ["device_name", "manufacturer", "model", "serial_number", "ip_address", "mac_address"];
       example = ["Device 1", "Dell", "Model X", "SN123", "192.168.1.1", "00:1A:2B:3C:4D:5E"];
@@ -164,7 +172,16 @@ const BranchDetails = () => {
   };
 
   const handleCSVImport = async (type: string) => {
-    const file = fileInputRef.current?.files?.[0];
+    let file: File | undefined;
+    
+    if (type === "network_devices") {
+      file = fileInputRef.current?.files?.[0];
+    } else if (type === "users") {
+      file = usersFileInputRef.current?.files?.[0];
+    } else if (type === "devices") {
+      file = devicesFileInputRef.current?.files?.[0];
+    }
+    
     if (!file) return;
 
     const text = await file.text();
@@ -174,10 +191,25 @@ const BranchDetails = () => {
 
     const data = rows.map((row) => {
       const values = row.split(",").map((v) => v.trim());
-      const obj: any = { branch_id: branchId };
+      const obj: any = {};
       headers.forEach((header, i) => {
-        obj[header] = values[i] || null;
+        if (header === "account_enabled") {
+          obj[header] = values[i]?.toLowerCase() === "true";
+        } else if (header === "ram_gb" || header === "storage_gb") {
+          obj[header] = values[i] ? parseInt(values[i]) : null;
+        } else {
+          obj[header] = values[i] || null;
+        }
       });
+      
+      if (type === "network_devices") {
+        obj.branch_id = branchId;
+      } else if (type === "users") {
+        obj.department = branch?.name;
+      } else if (type === "devices") {
+        obj.branch = branch?.name;
+      }
+      
       return obj;
     });
 
@@ -186,7 +218,16 @@ const BranchDetails = () => {
         const { error } = await supabase.from("network_devices").insert(data);
         if (error) throw error;
         queryClient.invalidateQueries({ queryKey: ["network_devices", branchId] });
+      } else if (type === "users") {
+        const { error } = await supabase.from("directory_users").insert(data);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ["directory_users", branchId] });
+      } else if (type === "devices") {
+        const { error } = await supabase.from("hardware_inventory").insert(data);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ["hardware", branchId] });
       }
+      
       toast({
         title: "Success",
         description: `${data.length} records imported successfully`,
@@ -199,9 +240,10 @@ const BranchDetails = () => {
       });
     }
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    // Clear file inputs
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (usersFileInputRef.current) usersFileInputRef.current.value = "";
+    if (devicesFileInputRef.current) devicesFileInputRef.current.value = "";
   };
 
   const exportToCSV = (data: any[], filename: string) => {
@@ -299,10 +341,27 @@ const BranchDetails = () => {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>Users ({directoryUsers?.length || 0})</CardTitle>
-                  <Button variant="outline" onClick={() => exportToCSV(directoryUsers || [], `${branch?.name}_users`)}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Export CSV
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => downloadCSVTemplate("users")}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Download Template
+                    </Button>
+                    <input
+                      ref={usersFileInputRef}
+                      type="file"
+                      accept=".csv"
+                      className="hidden"
+                      onChange={() => handleCSVImport("users")}
+                    />
+                    <Button variant="outline" onClick={() => usersFileInputRef.current?.click()}>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Import CSV
+                    </Button>
+                    <Button variant="outline" onClick={() => exportToCSV(directoryUsers || [], `${branch?.name}_users`)}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Export CSV
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -319,10 +378,27 @@ const BranchDetails = () => {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>Hardware Devices ({hardwareDevices?.length || 0})</CardTitle>
-                  <Button variant="outline" onClick={() => exportToCSV(hardwareDevices || [], `${branch?.name}_devices`)}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Export CSV
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => downloadCSVTemplate("devices")}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Download Template
+                    </Button>
+                    <input
+                      ref={devicesFileInputRef}
+                      type="file"
+                      accept=".csv"
+                      className="hidden"
+                      onChange={() => handleCSVImport("devices")}
+                    />
+                    <Button variant="outline" onClick={() => devicesFileInputRef.current?.click()}>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Import CSV
+                    </Button>
+                    <Button variant="outline" onClick={() => exportToCSV(hardwareDevices || [], `${branch?.name}_devices`)}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Export CSV
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
