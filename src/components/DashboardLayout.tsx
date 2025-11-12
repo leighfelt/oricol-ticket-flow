@@ -70,25 +70,31 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     }
   };
 
-  const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Tickets", href: "/tickets", icon: Ticket },
-    { name: "Jobs", href: "/jobs", icon: Briefcase },
-    { name: "Maintenance", href: "/maintenance", icon: Wrench },
-    { name: "Logistics", href: "/logistics", icon: Truck },
-    { name: "Assets", href: "/assets", icon: Package },
-    { name: "Branches", href: "/branches", icon: Building2 },
-    { name: "Microsoft 365", href: "/microsoft-365", icon: Cloud },
-    { name: "Hardware", href: "/hardware", icon: Monitor },
-    { name: "Software", href: "/software", icon: Code },
-    { name: "Licenses", href: "/licenses", icon: Key },
-    { name: "Provider Emails", href: "/provider-emails", icon: FileBarChart },
-    { name: "Remote Support", href: "/remote-support", icon: Video },
-    { name: "VPN", href: "/vpn", icon: Key },
-    { name: "RDP", href: "/rdp", icon: Monitor },
-    { name: "Reports", href: "/reports", icon: FileBarChart },
-    { name: "Users", href: "/users", icon: Users },
+  const allNavigation = [
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, requiresRole: false },
+    { name: "Tickets", href: "/tickets", icon: Ticket, requiresRole: false },
+    { name: "Jobs", href: "/jobs", icon: Briefcase, requiresRole: false },
+    { name: "Maintenance", href: "/maintenance", icon: Wrench, requiresRole: false },
+    { name: "Logistics", href: "/logistics", icon: Truck, requiresRole: false },
+    { name: "Assets", href: "/assets", icon: Package, requiresRole: false },
+    { name: "Branches", href: "/branches", icon: Building2, requiresRole: false },
+    { name: "Microsoft 365", href: "/microsoft-365", icon: Cloud, requiresRole: false },
+    { name: "Hardware", href: "/hardware", icon: Monitor, requiresRole: false },
+    { name: "Software", href: "/software", icon: Code, requiresRole: false },
+    { name: "Licenses", href: "/licenses", icon: Key, requiresRole: false },
+    { name: "Provider Emails", href: "/provider-emails", icon: FileBarChart, requiresRole: false },
+    { name: "Remote Support", href: "/remote-support", icon: Video, requiresRole: true },
+    { name: "VPN", href: "/vpn", icon: Key, requiresRole: true },
+    { name: "RDP", href: "/rdp", icon: Monitor, requiresRole: true },
+    { name: "Reports", href: "/reports", icon: FileBarChart, requiresRole: true },
+    { name: "Users", href: "/users", icon: Users, requiresRole: true },
   ];
+
+  // Filter navigation based on user roles
+  const navigation = allNavigation.filter(item => {
+    if (!item.requiresRole) return true;
+    return isAdmin || isCEO || isSupportStaff;
+  });
 
   return (
     <div className="flex h-screen bg-background">
