@@ -35,6 +35,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isCEO, setIsCEO] = useState(false);
+  const [isSupportStaff, setIsSupportStaff] = useState(false);
 
   useEffect(() => {
     checkUserRoles();
@@ -48,12 +49,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       .from("user_roles")
       .select("role")
       .eq("user_id", session.user.id)
-      .in("role", ["admin", "ceo"]);
+      .in("role", ["admin", "ceo", "support_staff"]);
 
     if (data) {
       const roles = data.map(r => r.role);
       setIsAdmin(roles.includes('admin'));
       setIsCEO(roles.includes('ceo'));
+      setIsSupportStaff(roles.includes('support_staff'));
     }
   };
 
@@ -77,17 +79,19 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { name: "Assets", href: "/assets", icon: Package },
     ...(isAdmin || isCEO ? [
       { name: "Branches", href: "/branches", icon: Building2 },
-      { name: "Remote Support", href: "/remote-support", icon: Video },
       { name: "Microsoft 365", href: "/microsoft-365", icon: Cloud },
       { name: "Hardware", href: "/hardware", icon: Monitor },
       { name: "Software", href: "/software", icon: Code },
       { name: "Licenses", href: "/licenses", icon: Key },
+      { name: "Provider Emails", href: "/provider-emails", icon: FileBarChart },
+    ] : []),
+    ...(isAdmin || isCEO || isSupportStaff ? [
+      { name: "Remote Support", href: "/remote-support", icon: Video },
       { name: "VPN", href: "/vpn", icon: Key },
       { name: "RDP", href: "/rdp", icon: Monitor },
-      { name: "Provider Emails", href: "/provider-emails", icon: FileBarChart },
       { name: "Reports", href: "/reports", icon: FileBarChart },
     ] : []),
-    ...(isAdmin ? [
+    ...(isAdmin || isSupportStaff ? [
       { name: "Users", href: "/users", icon: Users }
     ] : []),
   ];
