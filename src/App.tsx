@@ -28,6 +28,7 @@ import Maintenance from "./pages/Maintenance";
 import Logistics from "./pages/Logistics";
 import NymbisRdpCloud from "./pages/NymbisRdpCloud";
 import CompanyNetworkDiagram from "./pages/CompanyNetworkDiagram";
+import DocumentImport from "./pages/DocumentImport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,7 @@ const App = () => (
           <Route path="/logistics" element={<Logistics />} />
           <Route path="/nymbis-rdp-cloud" element={<NymbisRdpCloud />} />
           <Route path="/company-network" element={<CompanyNetworkDiagram />} />
+          <Route path="/document-import" element={<DocumentImport />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

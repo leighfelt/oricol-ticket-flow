@@ -18,7 +18,8 @@ import {
   Briefcase,
   Wrench,
   Truck,
-  Network
+  Network,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -108,6 +109,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { name: "RDP", href: "/rdp", icon: Monitor, requiredRoles: ['admin', 'ceo', 'support_staff'] },
     { name: "Nymbis RDP Cloud", href: "/nymbis-rdp-cloud", icon: Cloud, requiredRoles: ['admin', 'ceo', 'support_staff'] },
     { name: "Company Network", href: "/company-network", icon: Network, requiredRoles: ['admin', 'ceo', 'support_staff'] },
+    { name: "Document Import", href: "/document-import", icon: FileText, requiredRoles: ['admin', 'ceo', 'support_staff'] },
     { name: "Reports", href: "/reports", icon: FileBarChart, requiredRoles: ['admin', 'ceo', 'support_staff'] },
     { name: "Users", href: "/users", icon: Users, requiredRoles: ['admin'] }, // Admin only, not CEO
   ];
