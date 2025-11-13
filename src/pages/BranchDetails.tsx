@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Upload, Download, Plus, Trash2, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DataTable, Column } from "@/components/DataTable";
+import { ImportHistory } from "@/components/ImportHistory";
 import {
   Dialog,
   DialogContent,
@@ -287,6 +288,24 @@ const BranchDetails = () => {
     });
 
     try {
+      // Create import job record
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: importJob, error: jobError } = await supabase
+        .from("import_jobs")
+        .insert([{
+          branch_id: branchId,
+          uploader: user?.id,
+          import_type: "csv",
+          resource_type: type,
+          status: "processing",
+        }])
+        .select()
+        .single();
+
+      if (jobError) {
+        console.error("Failed to create import job:", jobError);
+      }
+
       if (type === "network_devices") {
         const { error } = await supabase.from("network_devices").insert(data);
         if (error) throw error;
@@ -305,14 +324,49 @@ const BranchDetails = () => {
         queryClient.invalidateQueries({ queryKey: ["internet_connectivity", branchId] });
       }
       
+      // Update import job status to completed
+      if (importJob) {
+        await supabase
+          .from("import_jobs")
+          .update({
+            status: "completed",
+            result_summary: { records_imported: data.length },
+          })
+          .eq("id", importJob.id);
+        queryClient.invalidateQueries({ queryKey: ["import-jobs", branchId] });
+      }
+
       toast({
         title: "Success",
         description: `${data.length} records imported successfully`,
       });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to import CSV";
+      
+      // Update import job status to failed
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: failedJobs } = await supabase
+        .from("import_jobs")
+        .select("*")
+        .eq("uploader", user?.id)
+        .eq("status", "processing")
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (failedJobs && failedJobs.length > 0) {
+        await supabase
+          .from("import_jobs")
+          .update({
+            status: "failed",
+            error_details: errorMessage,
+          })
+          .eq("id", failedJobs[0].id);
+        queryClient.invalidateQueries({ queryKey: ["import-jobs", branchId] });
+      }
+
       toast({
         title: "Error",
-        description: "Failed to import CSV",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -398,21 +452,25 @@ const BranchDetails = () => {
           </TabsList>
 
           <TabsContent value="overview">
-            <Card>
-              <CardHeader>
-                <CardTitle>Branch Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {branch?.address && <p><strong>Address:</strong> {branch.address}</p>}
-                {branch?.city && <p><strong>City:</strong> {branch.city}</p>}
-                {branch?.state && <p><strong>State:</strong> {branch.state}</p>}
-                {branch?.postal_code && <p><strong>Postal Code:</strong> {branch.postal_code}</p>}
-                {branch?.country && <p><strong>Country:</strong> {branch.country}</p>}
-                {branch?.phone && <p><strong>Phone:</strong> {branch.phone}</p>}
-                {branch?.email && <p><strong>Email:</strong> {branch.email}</p>}
-                {branch?.notes && <p><strong>Notes:</strong> {branch.notes}</p>}
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Branch Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {branch?.address && <p><strong>Address:</strong> {branch.address}</p>}
+                  {branch?.city && <p><strong>City:</strong> {branch.city}</p>}
+                  {branch?.state && <p><strong>State:</strong> {branch.state}</p>}
+                  {branch?.postal_code && <p><strong>Postal Code:</strong> {branch.postal_code}</p>}
+                  {branch?.country && <p><strong>Country:</strong> {branch.country}</p>}
+                  {branch?.phone && <p><strong>Phone:</strong> {branch.phone}</p>}
+                  {branch?.email && <p><strong>Email:</strong> {branch.email}</p>}
+                  {branch?.notes && <p><strong>Notes:</strong> {branch.notes}</p>}
+                </CardContent>
+              </Card>
+              
+              <ImportHistory branchId={branchId} />
+            </div>
           </TabsContent>
 
           <TabsContent value="internet">
