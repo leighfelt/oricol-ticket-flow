@@ -25,18 +25,28 @@ interface ParsedData {
     dataUrl: string;
     storagePath?: string;
   }>;
+  pages?: Array<{
+    pageNumber: number;
+    text: string;
+    images: Array<{
+      name: string;
+      dataUrl: string;
+    }>;
+  }>;
 }
 
 interface DocumentUploadProps {
   onDataParsed?: (data: ParsedData) => void;
   acceptedFormats?: string;
   enableImageExtraction?: boolean;
+  enablePageMode?: boolean;
 }
 
 export const DocumentUpload = ({ 
   onDataParsed, 
   acceptedFormats = ".docx,.doc,.pdf,image/*",
-  enableImageExtraction = true
+  enableImageExtraction = true,
+  enablePageMode = false
 }: DocumentUploadProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [parsedData, setParsedData] = useState<ParsedData | null>(null);
@@ -142,21 +152,50 @@ export const DocumentUpload = ({
     }
   };
 
-  const parsePDF = async (file: File): Promise<{ text: string; images: Array<{name: string; dataUrl: string}> }> => {
+  const parsePDF = async (file: File): Promise<{ text: string; images: Array<{name: string; dataUrl: string}>; pages?: Array<{pageNumber: number; text: string; images: Array<{name: string; dataUrl: string}>}> }> => {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     
     let fullText = '';
     const images: Array<{name: string; dataUrl: string}> = [];
+    const pages: Array<{pageNumber: number; text: string; images: Array<{name: string; dataUrl: string}>}> = [];
     
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
       const pageText = textContent.items.map((item: { str: string }) => item.str).join(' ');
       fullText += pageText + '\n';
+      
+      // If page mode is enabled, capture page-specific data
+      if (enablePageMode) {
+        // Render page to canvas to get image
+        const viewport = page.getViewport({ scale: 1.5 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        if (context) {
+          await page.render({
+            canvasContext: context,
+            viewport: viewport
+          }).promise;
+          
+          const pageDataUrl = canvas.toDataURL('image/png');
+          
+          pages.push({
+            pageNumber: i,
+            text: pageText.trim(),
+            images: [{
+              name: `page_${i}.png`,
+              dataUrl: pageDataUrl
+            }]
+          });
+        }
+      }
     }
     
-    return { text: fullText.trim(), images };
+    return { text: fullText.trim(), images, pages: enablePageMode ? pages : undefined };
   };
 
   const handleImageFile = async (file: File): Promise<ParsedData> => {
@@ -190,11 +229,12 @@ export const DocumentUpload = ({
       // Handle different file types
       if (file.type === 'application/pdf') {
         // Parse PDF
-        const { text, images } = await parsePDF(file);
+        const { text, images, pages } = await parsePDF(file);
         parsed = {
           text,
           tables: [],
-          images
+          images,
+          pages
         };
       } else if (file.type.startsWith('image/')) {
         // Handle direct image upload
