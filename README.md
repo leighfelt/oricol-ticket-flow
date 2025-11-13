@@ -44,6 +44,14 @@ A modern, professional helpdesk and asset management system built with React, Ty
 - Recent ticket activity
 - Real-time data synchronization
 
+### 📄 Document Import
+- Upload Word documents (.docx, .doc) to import data
+- Automatic table extraction and parsing
+- Smart field mapping for tickets, assets, and licenses
+- Template downloads for easy data entry
+- Import tracking and history
+- See [DOCUMENT_IMPORT.md](./DOCUMENT_IMPORT.md) for detailed instructions
+
 ### 🎨 User Interface
 - Modern, responsive design
 - Mobile-friendly with hamburger menu
