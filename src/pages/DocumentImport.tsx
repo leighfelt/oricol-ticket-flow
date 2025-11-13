@@ -4,14 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { TemplateDownloader } from "@/components/TemplateDownloader";
+import { ImportItemSelector, ImportItem, ImportDestination } from "@/components/ImportItemSelector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, Database, FileText, Table, FileDown } from "lucide-react";
+import { AlertCircle, Database, FileText, Table, FileDown, Image as ImageIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Switch } from "@/components/ui/switch";
 
 interface ParsedData {
   text: string;
@@ -24,6 +26,14 @@ interface ParsedData {
     dataUrl: string;
     storagePath?: string;
   }>;
+  pages?: Array<{
+    pageNumber: number;
+    text: string;
+    images: Array<{
+      name: string;
+      dataUrl: string;
+    }>;
+  }>;
 }
 
 const DocumentImport = () => {
@@ -32,6 +42,9 @@ const DocumentImport = () => {
   const [selectedTable, setSelectedTable] = useState<number>(0);
   const [targetEntity, setTargetEntity] = useState<string>("");
   const [isImporting, setIsImporting] = useState(false);
+  const [showItemSelector, setShowItemSelector] = useState(false);
+  const [importItems, setImportItems] = useState<ImportItem[]>([]);
+  const [enablePageMode, setEnablePageMode] = useState(false);
 
   // Smart routing: suggest target page based on document content
   const suggestTargetPage = (data: ParsedData): { page: string; reason: string } | null => {
@@ -80,10 +93,68 @@ const DocumentImport = () => {
     return null;
   };
 
+  const prepareImportItems = (data: ParsedData): ImportItem[] => {
+    const items: ImportItem[] = [];
+    
+    // If page mode is enabled and we have pages, use those
+    if (enablePageMode && data.pages && data.pages.length > 0) {
+      data.pages.forEach((page) => {
+        items.push({
+          type: 'page',
+          id: `page-${page.pageNumber}`,
+          content: {
+            pageNumber: page.pageNumber,
+            text: page.text,
+            dataUrl: page.images[0]?.dataUrl,
+            name: `Page ${page.pageNumber}`
+          }
+        });
+      });
+    } else {
+      // Standard mode: separate images and text
+      
+      // Add images
+      data.images?.forEach((image, index) => {
+        items.push({
+          type: 'image',
+          id: `image-${index}`,
+          content: {
+            name: image.name,
+            dataUrl: image.dataUrl,
+            storagePath: image.storagePath
+          }
+        });
+      });
+      
+      // Add text content if it exists
+      if (data.text && data.text.trim().length > 0) {
+        items.push({
+          type: 'text',
+          id: 'text-content',
+          content: {
+            text: data.text,
+            name: 'Document Text'
+          }
+        });
+      }
+    }
+    
+    return items;
+  };
+
   const handleDataParsed = (data: ParsedData) => {
     setParsedData(data);
     setSelectedTable(0);
     setTargetEntity("");
+    
+    // Prepare import items
+    const items = prepareImportItems(data);
+    setImportItems(items);
+    
+    // If we have images or pages, show the item selector
+    if (items.length > 0 && (data.images?.length || data.pages?.length)) {
+      setShowItemSelector(true);
+    }
     
     // Suggest target page if applicable
     const suggestion = suggestTargetPage(data);
@@ -97,6 +168,31 @@ const DocumentImport = () => {
         duration: 10000
       });
     }
+  };
+
+  const handleImportComplete = (results: Array<{ item: ImportItem; destination: ImportDestination; success: boolean }>) => {
+    const successCount = results.filter(r => r.success).length;
+    const failCount = results.filter(r => !r.success).length;
+    
+    if (successCount > 0) {
+      toast.success(`Successfully imported ${successCount} item${successCount !== 1 ? 's' : ''}`, {
+        description: failCount > 0 ? `${failCount} item${failCount !== 1 ? 's' : ''} failed to import` : undefined
+      });
+    }
+    
+    if (failCount > 0 && successCount === 0) {
+      toast.error(`Failed to import ${failCount} item${failCount !== 1 ? 's' : ''}`);
+    }
+    
+    // Reset state
+    setShowItemSelector(false);
+    setImportItems([]);
+    setParsedData(null);
+  };
+
+  const handleCancelImport = () => {
+    setShowItemSelector(false);
+    // Keep parsed data so user can still access it
   };
 
   const mapTableToEntity = (
@@ -364,15 +460,55 @@ const DocumentImport = () => {
           </TabsContent>
 
           <TabsContent value="upload" className="space-y-4">
-            <DocumentUpload onDataParsed={handleDataParsed} />
+            <Card>
+              <CardHeader>
+                <CardTitle>Import Options</CardTitle>
+                <CardDescription>Configure how documents are processed</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="page-mode"
+                    checked={enablePageMode}
+                    onCheckedChange={setEnablePageMode}
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="page-mode" className="cursor-pointer">
+                      Enable Page-by-Page Mode
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Preserve images and text together as they appear on each page (PDFs only)
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            {parsedData && parsedData.tables.length === 0 && (
+            <DocumentUpload 
+              onDataParsed={handleDataParsed} 
+              enablePageMode={enablePageMode}
+            />
+
+            {showItemSelector && importItems.length > 0 && (
+              <ImportItemSelector
+                items={importItems}
+                onImportComplete={handleImportComplete}
+                onCancel={handleCancelImport}
+              />
+            )}
+
+            {parsedData && parsedData.tables.length === 0 && !showItemSelector && (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>No Tables Found</AlertTitle>
                 <AlertDescription>
                   The document was parsed successfully, but no tables were found. 
-                  Make sure your data is formatted as a table in the Word document.
+                  {parsedData.images && parsedData.images.length > 0 && (
+                    <> However, {parsedData.images.length} image{parsedData.images.length !== 1 ? 's were' : ' was'} extracted. Use the import selector above to save them.</>
+                  )}
+                  {(!parsedData.images || parsedData.images.length === 0) && (
+                    <> Make sure your data is formatted as a table in the Word document.</>
+                  )}
                 </AlertDescription>
               </Alert>
             )}
