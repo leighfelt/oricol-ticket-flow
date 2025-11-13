@@ -2,13 +2,14 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { DocumentUpload } from "@/components/DocumentUpload";
+import { TemplateDownloader } from "@/components/TemplateDownloader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, Database, FileText, Table } from "lucide-react";
+import { AlertCircle, Database, FileText, Table, FileDown } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ParsedData {
@@ -239,11 +240,61 @@ const DocumentImport = () => {
               <FileText className="h-4 w-4 mr-2" />
               Upload Document
             </TabsTrigger>
+            <TabsTrigger value="templates">
+              <FileDown className="h-4 w-4 mr-2" />
+              Templates
+            </TabsTrigger>
             <TabsTrigger value="import" disabled={!parsedData || parsedData.tables.length === 0}>
               <Database className="h-4 w-4 mr-2" />
               Import Data
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="templates" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <TemplateDownloader entityType="tickets" />
+              <TemplateDownloader entityType="assets" />
+              <TemplateDownloader entityType="licenses" />
+            </div>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>How to Use Templates</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div>
+                  <h4 className="font-medium mb-1">Option 1: CSV Template (Recommended)</h4>
+                  <ol className="list-decimal list-inside space-y-1 text-muted-foreground ml-2">
+                    <li>Download the CSV template for your data type</li>
+                    <li>Open it in Excel or any spreadsheet application</li>
+                    <li>Fill in your data following the example rows</li>
+                    <li>Save the file</li>
+                    <li>Use the CSV import feature on the respective page (Tickets, Assets, or Licenses)</li>
+                  </ol>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium mb-1">Option 2: Word Document</h4>
+                  <ol className="list-decimal list-inside space-y-1 text-muted-foreground ml-2">
+                    <li>Download the Word import instructions</li>
+                    <li>Create a table in Microsoft Word with the specified headers</li>
+                    <li>Fill in your data in table rows</li>
+                    <li>Save as .docx or .doc</li>
+                    <li>Upload the document using the "Upload Document" tab above</li>
+                  </ol>
+                </div>
+
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Pro Tip</AlertTitle>
+                  <AlertDescription>
+                    For large datasets, CSV files are faster and more reliable. 
+                    Use Word documents when you have formatted text or need to include additional context.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="upload" className="space-y-4">
             <DocumentUpload onDataParsed={handleDataParsed} />
