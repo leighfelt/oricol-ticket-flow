@@ -181,6 +181,11 @@ If you can see tabs but get "Access Denied" when clicking them:
 ### Troubleshooting Storage and RLS Errors
 If you encounter storage-related errors when uploading files:
 
+**"you do not have access to perform this function" or permission errors**:
+- **Latest Fix:** See **[RLS_PERMISSION_FIX.md](./RLS_PERMISSION_FIX.md)** for storage.buckets RLS policy fix
+- Fixes errors when app queries bucket information
+- Migration: `20251114070500_fix_storage_buckets_rls.sql`
+
 **"new row violates row-level security policy"**:
 - **Comprehensive Guide:** See **[SUPABASE_STORAGE_RLS_GUIDE.md](./SUPABASE_STORAGE_RLS_GUIDE.md)** for complete RLS troubleshooting
 - **Quick Fix:** See **[DOCUMENT_UPLOAD_RLS_FIX.md](./DOCUMENT_UPLOAD_RLS_FIX.md)** for this project's specific solution
@@ -329,6 +334,12 @@ The application includes two migrations:
    - Enables image uploads for network diagrams, documents, and more
    - Sets up RLS policies for secure image storage
    - See [STORAGE_BUCKET_FIX.md](./STORAGE_BUCKET_FIX.md) for details
+
+5. **Storage Buckets RLS Policy Fix** (20251114070500)
+   - Fixes "you do not have access to perform this function" errors
+   - Adds RLS policy on storage.buckets table to allow bucket queries
+   - Required for upload operations to check bucket accessibility
+   - See [RLS_PERMISSION_FIX.md](./RLS_PERMISSION_FIX.md) for details
 
 ## Security
 
