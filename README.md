@@ -182,9 +182,10 @@ If you can see tabs but get "Access Denied" when clicking them:
 If you encounter storage-related errors when uploading files:
 
 **"you do not have access to perform this function" or permission errors**:
-- **Latest Fix:** See **[RLS_PERMISSION_FIX.md](./RLS_PERMISSION_FIX.md)** for storage.buckets RLS policy fix
-- Fixes errors when app queries bucket information
-- Migration: `20251114070500_fix_storage_buckets_rls.sql`
+- **✅ FINAL FIX (Nov 2025):** See **[PERMISSIONS_ERROR_FIX_FINAL.md](./PERMISSIONS_ERROR_FIX_FINAL.md)** for the complete solution
+- Disables RLS on storage.buckets system table (correct approach)
+- Migration: `20251114072100_disable_storage_buckets_rls.sql`
+- This supersedes previous RLS fixes on storage.buckets
 
 **"new row violates row-level security policy"**:
 - **Comprehensive Guide:** See **[SUPABASE_STORAGE_RLS_GUIDE.md](./SUPABASE_STORAGE_RLS_GUIDE.md)** for complete RLS troubleshooting
