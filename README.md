@@ -77,6 +77,7 @@ npm run dev         # Start the app
 - **Local Development** - See [LOCAL_SETUP.md](./LOCAL_SETUP.md)
 - **Cloud Deployment** - See [DEPLOYMENT.md](./DEPLOYMENT.md)
 - **Quick Reference** - See [QUICKSTART.md](./QUICKSTART.md)
+- **🔄 Preserve Lovable & Run Local** - See [LOVABLE_PRESERVE_GUIDE.md](./LOVABLE_PRESERVE_GUIDE.md) for running both simultaneously
 
 ## Features
 
@@ -135,6 +136,7 @@ npm run dev         # Start the app
 - **[examples/](./examples/)** - 🎨 Working iframe examples (HTML files)
 
 ### Deployment & Setup
+- **[LOVABLE_PRESERVE_GUIDE.md](./LOVABLE_PRESERVE_GUIDE.md)** - 🔄 Preserve lovable deployment & run local copy
 - **[SELF_HOSTED_SETUP.md](./SELF_HOSTED_SETUP.md)** - Complete self-hosted Supabase setup guide
 - **[MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)** - Migrate from cloud Supabase to self-hosted
 - **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** - Common commands and operations
