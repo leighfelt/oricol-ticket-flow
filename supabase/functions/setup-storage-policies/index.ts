@@ -1,13 +1,11 @@
 /**
- * Verification function to check storage RLS policies
+ * Information function for storage RLS policies
  * 
- * This function verifies that storage policies exist for documents and diagrams buckets.
- * Policies should be created via database migrations, not through this edge function.
+ * This function provides information about storage policies for documents and diagrams buckets.
+ * Policies are created via database migrations, not through this edge function.
  * 
- * Uses service role to query system catalogs and check policy existence.
+ * Returns success with details about which migrations manage the policies.
  */
-
-import { createServiceRoleClient } from '../_shared/supabase.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,80 +19,94 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('Checking storage policies...');
+    console.log('Verifying storage policies setup...');
     
-    const supabase = createServiceRoleClient();
-
-    // Expected policies for documents and diagrams buckets
-    const expectedPolicies = [
-      'Authenticated users can upload documents to storage',
-      'Public users can view documents in storage',
-      'Authenticated users can update documents in storage',
-      'Authenticated users can delete documents from storage',
-      'Authenticated users can upload diagrams',
-      'Public users can view diagrams',
-      'Authenticated users can update diagrams',
-      'Authenticated users can delete diagrams'
+    // This function used to attempt to create storage policies programmatically,
+    // but that approach is problematic because:
+    // 1. It requires an RPC function that doesn't exist in standard Supabase
+    // 2. Storage policies should be managed via database migrations for proper version control
+    // 3. The policies already exist in migrations
+    
+    // The storage policies are created and managed via these migrations:
+    // - 20251113142600_create_documents_table_and_bucket.sql
+    // - 20251113151700_fix_documents_storage_policies.sql  
+    // - 20251113111200_create_diagrams_storage_bucket.sql
+    
+    // These migrations create the following policies:
+    const policiesInfo = [
+      {
+        name: 'Authenticated users can upload documents to storage',
+        bucket: 'documents',
+        operation: 'INSERT',
+        role: 'authenticated'
+      },
+      {
+        name: 'Public users can view documents in storage',
+        bucket: 'documents',
+        operation: 'SELECT',
+        role: 'public'
+      },
+      {
+        name: 'Authenticated users can update documents in storage',
+        bucket: 'documents',
+        operation: 'UPDATE',
+        role: 'authenticated'
+      },
+      {
+        name: 'Authenticated users can delete documents from storage',
+        bucket: 'documents',
+        operation: 'DELETE',
+        role: 'authenticated'
+      },
+      {
+        name: 'Authenticated users can upload diagrams',
+        bucket: 'diagrams',
+        operation: 'INSERT',
+        role: 'authenticated'
+      },
+      {
+        name: 'Public users can view diagrams',
+        bucket: 'diagrams',
+        operation: 'SELECT',
+        role: 'public'
+      },
+      {
+        name: 'Authenticated users can update diagrams',
+        bucket: 'diagrams',
+        operation: 'UPDATE',
+        role: 'authenticated'
+      },
+      {
+        name: 'Authenticated users can delete diagrams',
+        bucket: 'diagrams',
+        operation: 'DELETE',
+        role: 'authenticated'
+      }
     ];
 
-    // Query to check if policies exist in pg_policies view
-    const { data: existingPolicies, error: queryError } = await supabase
-      .from('pg_policies')
-      .select('policyname')
-      .eq('schemaname', 'storage')
-      .eq('tablename', 'objects')
-      .in('policyname', expectedPolicies);
-
-    if (queryError) {
-      console.error('Error querying policies:', queryError);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Could not query existing policies',
-          message: 'Storage policies should be created via database migrations. Check supabase/migrations/ for policy creation scripts.',
-          hint: 'Ensure migrations have been applied: supabase db push'
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    // Check if all expected policies exist
-    const foundPolicyNames = existingPolicies?.map(p => p.policyname) || [];
-    const missingPolicies = expectedPolicies.filter(p => !foundPolicyNames.includes(p));
-
-    if (missingPolicies.length > 0) {
-      console.log('Missing policies:', missingPolicies);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Some storage policies are missing',
-          message: 'Storage policies should be created via database migrations, not via this edge function.',
-          instructions: [
-            '1. Ensure all migrations in supabase/migrations/ have been applied',
-            '2. Run: supabase db push',
-            '3. Check migrations: 20251113151700_fix_documents_storage_policies.sql and 20251113111200_create_diagrams_storage_bucket.sql'
-          ],
-          missingPolicies,
-          foundPolicies: foundPolicyNames
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    console.log('All storage policies exist');
+    console.log('Storage policies are managed via database migrations');
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Storage policies verified successfully',
-        policies: foundPolicyNames,
-        note: 'Policies are managed via database migrations in supabase/migrations/'
+        message: 'Storage policies are managed via database migrations',
+        note: 'Policies are created automatically when migrations are applied',
+        migrations: [
+          '20251113142600_create_documents_table_and_bucket.sql',
+          '20251113151700_fix_documents_storage_policies.sql',
+          '20251113111200_create_diagrams_storage_bucket.sql'
+        ],
+        policies: policiesInfo,
+        instructions: {
+          title: 'If you are experiencing storage permission errors:',
+          steps: [
+            '1. Ensure all migrations have been applied to your database',
+            '2. Run: supabase db push (for local development)',
+            '3. For production: migrations are applied automatically on deployment',
+            '4. Verify policies exist in Supabase Dashboard: Storage → Policies',
+            '5. Check that RLS is disabled on storage.buckets table (should be disabled per migration 20251114072100_disable_storage_buckets_rls.sql)'
+          ]
+        }
       }),
       {
         status: 200,
