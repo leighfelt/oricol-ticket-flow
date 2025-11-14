@@ -30,6 +30,7 @@ import NymbisRdpCloud from "./pages/NymbisRdpCloud";
 import CompanyNetworkDiagram from "./pages/CompanyNetworkDiagram";
 import DocumentImport from "./pages/DocumentImport";
 import DocumentHub from "./pages/DocumentHub";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ const App = () => (
           <Route path="/company-network" element={<CompanyNetworkDiagram />} />
           <Route path="/document-import" element={<DocumentImport />} />
           <Route path="/document-hub" element={<DocumentHub />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
