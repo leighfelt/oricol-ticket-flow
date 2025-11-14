@@ -1,0 +1,142 @@
+================================================================================
+🔍 HOW TO FIND YOUR SUPABASE CONNECTION
+================================================================================
+
+PROBLEM:
+  You're using this Lovable app and need to know which Supabase instance
+  it's connected to. You may have added a Supabase integration manually,
+  but you're not sure if that's the one being used.
+
+SOLUTION:
+  This PR adds a Settings page to your app and comprehensive documentation
+  to help you identify and manage your Supabase connection.
+
+HOW TO USE:
+================================================================================
+
+STEP 1 - View Your Current Supabase Configuration:
+  1. Deploy this branch to Lovable (or run locally)
+  2. Navigate to: /settings in your app
+     Example: https://your-app.lovable.app/settings
+  3. The page will show:
+     - Current Supabase Project ID
+     - Supabase URL
+     - Connection status
+     - Whether credentials are configured
+
+STEP 2 - Find Your Supabase Project:
+  Based on your config, your Project ID is: kwmeqvrmtivmljujwocp
+  
+  1. Go to: https://supabase.com/dashboard
+  2. Look for a project with ID: kwmeqvrmtivmljujwocp
+  3. If you find it - that's your live Supabase instance!
+  4. If you don't find it - see the documentation below
+
+STEP 3 - Verify in Lovable:
+  1. Open your Lovable project dashboard
+  2. Go to: Settings → Environment Variables
+  3. Check these variables:
+     - VITE_SUPABASE_URL
+     - VITE_SUPABASE_PROJECT_ID
+     - VITE_SUPABASE_PUBLISHABLE_KEY
+  4. These values determine which Supabase instance is actually used
+
+COMPREHENSIVE GUIDE:
+================================================================================
+  Read the full guide: FIND_YOUR_SUPABASE_CONNECTION.md
+  
+  This document covers:
+  - 4 different methods to verify your Supabase connection
+  - Understanding auto-provisioned vs. manual Supabase setup
+  - How to switch Supabase projects
+  - Troubleshooting common issues
+  - Lovable-specific instructions
+
+WHAT'S NEW IN THIS PR:
+================================================================================
+  ✅ New /settings page showing your Supabase configuration
+  ✅ Settings link added to navigation menu (visible to all users)
+  ✅ Comprehensive guide: FIND_YOUR_SUPABASE_CONNECTION.md
+  ✅ Connection status checking
+  ✅ Quick links to Supabase dashboard
+  ✅ Copy-to-clipboard for Project ID and URL
+
+UNDERSTANDING YOUR SETUP:
+================================================================================
+
+Scenario A - Lovable Auto-Provisioned Supabase:
+  When you created your Lovable project, it may have automatically created
+  a Supabase project for you. This project might not appear in your personal
+  Supabase dashboard until you accept an invitation.
+  
+  ➡️ Check your email for Supabase invitations
+  ➡️ Or contact Lovable support for access
+
+Scenario B - Manual Supabase Integration:
+  You added a Supabase integration in Lovable's Integrations tab, connecting
+  your own Supabase project.
+  
+  ⚠️ NOTE: Adding an integration doesn't automatically update environment
+  variables! You need to manually update:
+    - VITE_SUPABASE_URL
+    - VITE_SUPABASE_PROJECT_ID
+    - VITE_SUPABASE_PUBLISHABLE_KEY
+  
+  ➡️ Go to Lovable Settings → Environment Variables to update these
+
+Scenario C - Conflicting Connections:
+  Lovable created an auto-provisioned Supabase, but you also added your own
+  Supabase integration. The environment variables determine which one is used.
+  
+  ➡️ Check environment variables in Lovable
+  ➡️ Decide which Supabase to use
+  ➡️ Update environment variables accordingly
+  ➡️ Run migrations on the correct instance
+
+QUICK REFERENCE:
+================================================================================
+  Your current configuration:
+    Project ID:   kwmeqvrmtivmljujwocp
+    Supabase URL: https://kwmeqvrmtivmljujwocp.supabase.co
+
+  Access your Supabase dashboard:
+    https://supabase.com/dashboard/project/kwmeqvrmtivmljujwocp
+
+  If the project doesn't exist in your dashboard:
+    1. Check email for Supabase invitations
+    2. Contact Lovable support
+    3. Or switch to your own Supabase project (see guide)
+
+TESTING THE CHANGES:
+================================================================================
+  1. Navigate to /settings in your app
+  2. Verify the connection status shows "Connected"
+  3. Verify the Project ID matches: kwmeqvrmtivmljujwocp
+  4. Click the "Open in Supabase" button
+  5. Confirm it opens your Supabase project
+
+RELATED DOCUMENTATION:
+================================================================================
+  📖 FIND_YOUR_SUPABASE_CONNECTION.md - Complete guide (NEW)
+  📖 VERIFY_SUPABASE_CONNECTION.md - Connection verification
+  📖 SETUP.md - General setup instructions
+  📖 LOCAL_SETUP.md - Local development setup
+
+STILL HAVE QUESTIONS?
+================================================================================
+  The /settings page and FIND_YOUR_SUPABASE_CONNECTION.md guide answer:
+  
+  ❓ Which Supabase project is my app using?
+  ❓ How do I access my Supabase dashboard?
+  ❓ I added a Supabase integration - why isn't it being used?
+  ❓ How do I switch to a different Supabase project?
+  ❓ Where are the environment variables stored?
+  ❓ What's the difference between Lovable's Supabase and mine?
+
+================================================================================
+Status: ✅ READY TO USE
+Action Required: 
+  1. Deploy this branch
+  2. Visit /settings to see your Supabase connection
+  3. Read FIND_YOUR_SUPABASE_CONNECTION.md for detailed guidance
+================================================================================
