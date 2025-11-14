@@ -182,8 +182,11 @@ If you can see tabs but get "Access Denied" when clicking them:
 If you encounter storage-related errors when uploading files:
 
 **"new row violates row-level security policy"**:
-- **Comprehensive Guide:** See **[SUPABASE_STORAGE_RLS_GUIDE.md](./SUPABASE_STORAGE_RLS_GUIDE.md)** for complete RLS troubleshooting
-- **Quick Fix:** See **[DOCUMENT_UPLOAD_RLS_FIX.md](./DOCUMENT_UPLOAD_RLS_FIX.md)** for this project's specific solution
+- **⚡ START HERE:** See **[QUICKFIX_START_HERE.md](./QUICKFIX_START_HERE.md)** for 2-minute fix
+- **Complete Guide:** See **[COMPLETE_FIX_GUIDE.md](./COMPLETE_FIX_GUIDE.md)** for detailed instructions
+- **SQL Fix Script:** Run **[FIX_RLS_NOW.sql](./FIX_RLS_NOW.sql)** in Supabase SQL Editor
+- **Verification:** Use **[VERIFY_FIX.sql](./VERIFY_FIX.sql)** to check if fix was applied
+- **Background Info:** See **[SUPABASE_STORAGE_RLS_GUIDE.md](./SUPABASE_STORAGE_RLS_GUIDE.md)** for technical details
 
 **"bucket not found" errors**:
 - **Solution:** See **[STORAGE_BUCKET_FIX.md](./STORAGE_BUCKET_FIX.md)** for migration instructions
