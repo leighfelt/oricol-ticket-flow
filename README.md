@@ -76,6 +76,16 @@ npm run dev         # Start the app
 
 **URL**: https://lovable.dev/projects/c75c70a7-c13d-4879-a8af-bbb8cc076141
 
+## 📖 Documentation
+
+- **[SELF_HOSTED_SETUP.md](./SELF_HOSTED_SETUP.md)** - Complete self-hosted Supabase setup guide
+- **[MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)** - Migrate from cloud Supabase to self-hosted
+- **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** - Common commands and operations
+- **[INSTALLATION_OPTIONS.md](./INSTALLATION_OPTIONS.md)** - Compare all deployment options
+- **[LOCAL_SETUP.md](./LOCAL_SETUP.md)** - Local development setup
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Cloud deployment options
+- **[QUICKSTART.md](./QUICKSTART.md)** - Quick start guide
+
 ## Getting Started
 
 ### 🚀 Quick Start Options
