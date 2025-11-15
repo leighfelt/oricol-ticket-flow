@@ -226,13 +226,6 @@ export const DocumentUpload = ({
     setFileName(file.name);
     setIsProcessing(true);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setFileName(file.name);
-    setIsProcessing(true);
-
     try {
       console.log("🔍 ===== DOCUMENT UPLOAD DEBUG START =====");
       console.log("🔍 File details:", {
@@ -276,8 +269,7 @@ export const DocumentUpload = ({
         uploadData,
         error: uploadError,
         errorMessage: uploadError?.message,
-        errorCode: uploadError?.statusCode,
-        errorDetails: uploadError?.details
+        errorHint: (uploadError as any)?.hint
       });
 
       if (uploadError) {
