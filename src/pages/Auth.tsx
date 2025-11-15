@@ -66,18 +66,26 @@ const Auth = () => {
         setIsForgotPassword(false);
         setIsLogin(true);
       } else if (isAdminRecovery) {
-        // Admin account recovery - grant temporary admin role
-        // This requires a special recovery code that should be set up separately
-        if (email === 'craig@zerobitone.co.za' && recoveryCode === 'ADMIN-RECOVERY-2024') {
-          toast({
-            title: "Admin Recovery",
-            description: "Contact system administrator for manual role assignment",
-          });
-          setIsAdminRecovery(false);
-          setIsLogin(true);
-        } else {
-          throw new Error("Invalid recovery credentials");
+        // Admin account recovery - verify via secure server endpoint
+        const response = await fetch('/api/admin/recover', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, recoveryCode }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Invalid recovery credentials' }));
+          throw new Error(errorData.error || 'Invalid recovery credentials');
         }
+
+        toast({
+          title: "Admin Recovery",
+          description: "Recovery code verified. Contact system administrator for manual role assignment",
+        });
+        setIsAdminRecovery(false);
+        setIsLogin(true);
       } else if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
           email,

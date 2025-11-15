@@ -1,33 +1,20 @@
-/**
- * Example Edge Function demonstrating how to bypass RLS using Service Role Key
- * 
- * This function shows how to use the service key for storage operations that
- * bypass Row Level Security policies. This is useful for:
- * - Bulk file operations
- * - System-level file management
- * - Administrative tasks
- * 
- * ⚠️ SECURITY WARNING:
- * - This function should only be called from trusted server environments
- * - Never expose service role key to client-side code
- * - Always validate and sanitize inputs
- * - Use authentication to verify caller identity
- */
+// Secure wrapper: enforce JWT verification and admin claim before performing admin storage operations.
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.80.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
-import { createServiceRoleClient } from '../_shared/supabase.ts';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!; // must be set in Secret env for functions
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface StorageOperationRequest {
-  operation: 'upload' | 'delete' | 'list' | 'move';
-  bucket: string;
-  path?: string;
-  file?: string; // base64 encoded file data
-  newPath?: string; // for move operations
-}
+const bodySchema = z.object({
+  operation: z.enum(['upload','delete','list','move']),
+  bucket: z.string().min(1),
+  path: z.string().optional(),
+});
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -36,113 +23,77 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get the service role client that bypasses RLS
-    const supabase = createServiceRoleClient();
+    // Enforce Authorization header (JWT) present and valid
+    const authHeader = req.headers.get('authorization') || '';
+    if (!authHeader.startsWith('Bearer ')) {
+      console.warn('Unauthorized attempt: missing Bearer token');
+      return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+    }
+    const jwt = authHeader.slice(7);
 
-    const { operation, bucket, path, file, newPath }: StorageOperationRequest = await req.json();
-
-    console.log(`Executing storage operation: ${operation} on bucket: ${bucket}`);
-
-    let result;
-
-    switch (operation) {
-      case 'upload': {
-        if (!path || !file) {
-          throw new Error('Path and file are required for upload operation');
-        }
-
-        // Decode base64 file data
-        const fileData = Uint8Array.from(atob(file), c => c.charCodeAt(0));
-        
-        // Upload file - this bypasses RLS policies due to service role key
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .upload(path, fileData, {
-            contentType: 'application/octet-stream',
-            upsert: true,
-          });
-
-        if (error) throw error;
-        
-        result = { success: true, data };
-        break;
-      }
-
-      case 'delete': {
-        if (!path) {
-          throw new Error('Path is required for delete operation');
-        }
-
-        // Delete file - bypasses RLS policies
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .remove([path]);
-
-        if (error) throw error;
-
-        result = { success: true, data };
-        break;
-      }
-
-      case 'list': {
-        // List files - bypasses RLS policies, shows all files
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .list(path || '', {
-            limit: 100,
-            offset: 0,
-            sortBy: { column: 'name', order: 'asc' },
-          });
-
-        if (error) throw error;
-
-        result = { success: true, data };
-        break;
-      }
-
-      case 'move': {
-        if (!path || !newPath) {
-          throw new Error('Path and newPath are required for move operation');
-        }
-
-        // Move file - bypasses RLS policies
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .move(path, newPath);
-
-        if (error) throw error;
-
-        result = { success: true, data };
-        break;
-      }
-
-      default:
-        throw new Error(`Unknown operation: ${operation}`);
+    // Verify JWT using Supabase Admin endpoint
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
+    
+    if (authError || !user) {
+      console.warn('Unauthorized attempt: invalid JWT', { authError });
+      return new Response('Unauthorized', { status: 401, headers: corsHeaders });
     }
 
-    console.log('Operation completed successfully:', result);
+    // Require admin role - adjust according to your role claims
+    const isAdmin = (user?.app_metadata?.roles || []).includes('admin') || 
+                    (user?.user_metadata?.role === 'admin');
+    if (!isAdmin) {
+      console.warn('Forbidden: user lacks admin role', { userId: user.id });
+      return new Response('Forbidden', { status: 403, headers: corsHeaders });
+    }
 
-    return new Response(
-      JSON.stringify(result),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
-
-  } catch (error) {
-    console.error('Error in storage-admin-operations:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    // Validate input
+    let json;
+    try {
+      json = await req.json();
+    } catch (e) {
+      return new Response('Bad Request', { status: 400, headers: corsHeaders });
+    }
     
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: errorMessage,
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    const parsed = bodySchema.safeParse(json);
+    if (!parsed.success) {
+      return new Response(
+        JSON.stringify({ error: parsed.error.errors }), 
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { operation, bucket, path } = parsed.data;
+    
+    // Implement safe admin operations here (example: list/delete)
+    if (operation === 'list') {
+      const { data, error } = await supabase.storage.from(bucket).list(path || '');
+      if (error) throw error;
+      return new Response(
+        JSON.stringify(data), 
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (operation === 'delete') {
+      if (!path) {
+        return new Response(
+          'Bad Request: path is required for delete', 
+          { status: 400, headers: corsHeaders }
+        );
       }
-    );
+      const { error } = await supabase.storage.from(bucket).remove([path]);
+      if (error) throw error;
+      return new Response(
+        JSON.stringify({ ok: true }), 
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    return new Response('Not Implemented', { status: 501, headers: corsHeaders });
+  } catch (err) {
+    console.error('Admin operation failed', err);
+    return new Response('Internal Server Error', { status: 500, headers: corsHeaders });
   }
 });
