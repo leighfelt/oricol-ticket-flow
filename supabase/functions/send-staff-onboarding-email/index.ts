@@ -87,7 +87,10 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: tokenData } = await supabase.rpc('generate_confirmation_token');
     const confirmationToken = tokenData || crypto.randomUUID();
     const confirmationUrl = `${supabaseUrl.replace('/rest/v1', '')}/functions/v1/confirm-provider-task?token=${confirmationToken}`;
-    const webConfirmUrl = `${Deno.env.get("SUPABASE_URL")?.replace('https://kwmeqvrmtivmljujwocp.supabase.co', 'https://kwmeqvrmtivmljujwocp.lovable.app')}/provider-confirm?token=${confirmationToken}`;
+    
+    // Use WEB_APP_URL environment variable or fall back to constructing from SUPABASE_URL
+    const webAppUrl = Deno.env.get("WEB_APP_URL") || Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || '';
+    const webConfirmUrl = `${webAppUrl}/provider-confirm?token=${confirmationToken}`;
 
     // Generate Qwerti email content
     const qwertiEmailHtml = `
@@ -231,7 +234,10 @@ const handler = async (req: Request): Promise<Response> => {
       // Generate unique confirmation token for Armata
       const { data: armataTokenData } = await supabase.rpc('generate_confirmation_token');
       const armataConfirmationToken = armataTokenData || crypto.randomUUID();
-      const armataWebConfirmUrl = `${Deno.env.get("SUPABASE_URL")?.replace('https://kwmeqvrmtivmljujwocp.supabase.co', 'https://kwmeqvrmtivmljujwocp.lovable.app')}/provider-confirm?token=${armataConfirmationToken}`;
+      
+      // Use WEB_APP_URL environment variable or fall back to constructing from SUPABASE_URL
+      const webAppUrl = Deno.env.get("WEB_APP_URL") || Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || '';
+      const armataWebConfirmUrl = `${webAppUrl}/provider-confirm?token=${armataConfirmationToken}`;
 
       const vpnEmailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
