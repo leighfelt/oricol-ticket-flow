@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageDocumentsView } from "@/components/PageDocumentsView";
 
 type NetworkDiagram = Tables<"network_diagrams">;
 
@@ -648,6 +649,15 @@ const CompanyNetworkDiagram = () => {
             <ImportHistory />
           </TabsContent>
         </Tabs>
+
+        {/* Documents Section - Files moved to Network Diagrams */}
+        <div className="mt-6">
+          <PageDocumentsView 
+            pageLocation="Network Diagrams"
+            title="Network Diagram Documents"
+            description="Documents and images moved to this page from the Document Hub"
+          />
+        </div>
       </div>
     </DashboardLayout>
   );

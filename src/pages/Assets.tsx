@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { PageDocumentsView } from "@/components/PageDocumentsView";
 
 const Assets = () => {
   const navigate = useNavigate();
@@ -358,6 +359,15 @@ const Assets = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Documents Section - Files moved to Assets */}
+        <div className="mt-6">
+          <PageDocumentsView 
+            pageLocation="Assets"
+            title="Asset Documents"
+            description="Documents moved to this page from the Document Hub"
+          />
+        </div>
       </div>
     </DashboardLayout>
   );

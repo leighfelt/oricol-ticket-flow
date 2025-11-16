@@ -10,6 +10,7 @@ import { DataTable } from "@/components/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { AddJobDialog } from "@/components/AddJobDialog";
 import { useToast } from "@/hooks/use-toast";
+import { PageDocumentsView } from "@/components/PageDocumentsView";
 
 const Jobs = () => {
   const navigate = useNavigate();
@@ -228,6 +229,15 @@ const Jobs = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Documents Section - Files moved to Jobs */}
+        <div className="mt-6">
+          <PageDocumentsView 
+            pageLocation="Jobs"
+            title="Job Documents"
+            description="Documents moved to this page from the Document Hub"
+          />
+        </div>
       </div>
     </DashboardLayout>
   );

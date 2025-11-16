@@ -44,7 +44,8 @@ import {
   FileImage,
   FileSpreadsheet,
   FileCode,
-  Loader2
+  Loader2,
+  Share2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -52,6 +53,8 @@ import { formatDistanceToNow } from "date-fns";
 import { StorageDiagnostics, logUploadError } from "@/components/StorageDiagnostics";
 import { StorageUsageChart } from "@/components/StorageUsageChart";
 import { UserProfilesSection } from "@/components/UserProfilesSection";
+import { ShareFileDialog } from "@/components/ShareFileDialog";
+import { UserGroupsManagement } from "@/components/UserGroupsManagement";
 
 interface Document {
   id: string;
@@ -65,6 +68,9 @@ interface Document {
   description: string | null;
   tags: string[] | null;
   uploaded_by: string | null;
+  page_location: string | null;
+  moved_from: string | null;
+  moved_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -81,6 +87,8 @@ const DocumentHub = () => {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [documentToShare, setDocumentToShare] = useState<Document | null>(null);
   
   // Upload form state
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -346,18 +354,32 @@ const DocumentHub = () => {
     if (!selectedDocument) return;
 
     try {
-      // This is a placeholder for the move functionality
-      // In a real implementation, you would:
-      // 1. Update the document's metadata to reflect new location
-      // 2. Trigger any necessary operations in the destination system
-      // 3. Optionally move the file to a different storage path
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Not authenticated");
+        return;
+      }
+
+      // Update the document's page_location and track the move
+      const { error } = await supabase
+        .from("documents")
+        .update({
+          page_location: destination,
+          moved_from: selectedDocument.page_location || "general",
+          moved_at: new Date().toISOString(),
+          moved_by: session.user.id,
+        })
+        .eq("id", selectedDocument.id);
+
+      if (error) throw error;
       
-      toast.info(`Move to ${destination} functionality coming soon`, {
-        description: `Document: ${selectedDocument.original_filename}`
+      toast.success(`Document moved to ${destination} successfully`, {
+        description: `"${selectedDocument.original_filename}" is now available in ${destination}`
       });
       
       setMoveDialogOpen(false);
       setSelectedDocument(null);
+      fetchDocuments();
     } catch (error) {
       console.error("Error moving document:", error);
       toast.error("Failed to move document");
@@ -500,6 +522,9 @@ const DocumentHub = () => {
         {/* User Profiles Section */}
         <UserProfilesSection />
 
+        {/* User Groups Management */}
+        <UserGroupsManagement />
+
         {/* Storage Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <StorageUsageChart />
@@ -615,6 +640,17 @@ const DocumentHub = () => {
                               variant="ghost"
                               size="icon"
                               onClick={() => {
+                                setDocumentToShare(doc);
+                                setShareDialogOpen(true);
+                              }}
+                              title="Share document"
+                            >
+                              <Share2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
                                 setSelectedDocument(doc);
                                 setMoveDialogOpen(true);
                               }}
@@ -678,6 +714,16 @@ const DocumentHub = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Share File Dialog */}
+        {documentToShare && (
+          <ShareFileDialog
+            documentId={documentToShare.id}
+            documentName={documentToShare.original_filename}
+            open={shareDialogOpen}
+            onOpenChange={setShareDialogOpen}
+          />
+        )}
       </div>
     </DashboardLayout>
   );
