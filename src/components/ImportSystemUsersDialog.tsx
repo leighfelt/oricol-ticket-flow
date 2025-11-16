@@ -16,13 +16,22 @@ interface StaffUser {
   notes: string | null;
 }
 
+interface ImportResult {
+  success: boolean;
+  email?: string;
+  username?: string;
+  password?: string;
+  error?: string;
+  message?: string;
+}
+
 export function ImportSystemUsersDialog() {
   const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [open, setOpen] = useState(false);
-  const [importResults, setImportResults] = useState<any[]>([]);
+  const [importResults, setImportResults] = useState<ImportResult[]>([]);
   const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
@@ -86,21 +95,24 @@ export function ImportSystemUsersDialog() {
     const userIds = Array.from(selectedUsers);
 
     try {
-      // @ts-expect-error - RPC function exists but types haven't regenerated yet
-      const { data, error } = await supabase.rpc("import_system_users_from_staff", {
-        staff_user_ids: userIds,
+      // Call the edge function to create users with admin privileges
+      const { data, error } = await supabase.functions.invoke("import-staff-users", {
+        body: { staff_user_ids: userIds },
       });
 
       if (error) throw error;
 
-      const result = data as any;
-      setImportResults(result?.results || []);
+      if (!data || !data.success) {
+        throw new Error(data?.error || "Import failed");
+      }
+
+      setImportResults(data.results || []);
       setShowResults(true);
       
-      toast.success(`Prepared ${result?.success_count || 0} users for import`, {
-        description: `${result?.error_count || 0} errors occurred`
+      toast.success(`Created ${data.success_count || 0} user${data.success_count !== 1 ? 's' : ''}`, {
+        description: `${data.error_count || 0} error${data.error_count !== 1 ? 's' : ''} occurred`
       });
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Failed to import users");
       console.error(error);
     }
