@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +51,7 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { StorageDiagnostics, logUploadError } from "@/components/StorageDiagnostics";
 import { StorageUsageChart } from "@/components/StorageUsageChart";
+import { UserProfilesSection } from "@/components/UserProfilesSection";
 
 interface Document {
   id: string;
@@ -68,6 +70,7 @@ interface Document {
 }
 
 const DocumentHub = () => {
+  const navigate = useNavigate();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -76,6 +79,8 @@ const DocumentHub = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
   
   // Upload form state
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -83,8 +88,40 @@ const DocumentHub = () => {
   const [uploadCategory, setUploadCategory] = useState("general");
 
   useEffect(() => {
+    checkAdminAccess();
+  }, [navigate]);
+
+  const checkAdminAccess = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate("/auth");
+      return;
+    }
+
+    // Check if user has admin role
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .eq("role", "admin");
+
+    if (!roles || roles.length === 0) {
+      setAccessDenied(true);
+      toast.error("Access Denied", {
+        description: "Only administrators can access the Document Hub"
+      });
+      return;
+    }
+
+    setIsAdmin(true);
     fetchDocuments();
-  }, []);
+  };
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchDocuments();
+    }
+  }, [isAdmin]);
 
   const setupStoragePolicies = async () => {
     try {
@@ -191,6 +228,19 @@ const DocumentHub = () => {
         throw dbError;
       }
 
+      // Log the upload activity
+      await (supabase as any)
+        .from("user_activity_log")
+        .insert({
+          user_id: session.user.id,
+          activity_type: 'document_upload',
+          activity_details: {
+            filename: uploadFile.name,
+            file_size: uploadFile.size,
+            category: category,
+          }
+        });
+
       toast.success("Document uploaded successfully");
       setUploadDialogOpen(false);
       setUploadFile(null);
@@ -226,6 +276,22 @@ const DocumentHub = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+
+      // Log the download activity
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await (supabase as any)
+          .from("user_activity_log")
+          .insert({
+            user_id: session.user.id,
+            activity_type: 'document_download',
+            activity_details: {
+              document_id: doc.id,
+              filename: doc.original_filename,
+              file_size: doc.file_size,
+            }
+          });
+      }
 
       toast.success("Document downloaded");
     } catch (error) {
@@ -325,6 +391,29 @@ const DocumentHub = () => {
     return matchesSearch && matchesCategory;
   });
 
+  if (accessDenied) {
+    return (
+      <DashboardLayout>
+        <div className="flex-1 flex items-center justify-center p-4 md:p-8">
+          <Card className="max-w-md">
+            <CardHeader>
+              <CardTitle className="text-destructive">Access Denied</CardTitle>
+              <CardDescription>
+                You do not have permission to access the Document Hub.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Only administrators can access this page. If you believe this is an error, 
+                please contact your system administrator.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -407,6 +496,9 @@ const DocumentHub = () => {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* User Profiles Section */}
+        <UserProfilesSection />
 
         {/* Storage Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

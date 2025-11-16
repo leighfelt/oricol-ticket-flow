@@ -95,9 +95,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   const allNavigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, requiredRoles: [] }, // Everyone
-    { name: "Tickets", href: "/tickets", icon: Ticket, requiredRoles: [] }, // Everyone
+    { name: "Tickets", href: "/tickets", icon: Ticket, requiredRoles: ['admin'] }, // Admin only
     { name: "Remote Support", href: "/remote-support", icon: Video, requiredRoles: [] }, // Everyone
-    { name: "Document Hub", href: "/document-hub", icon: FolderOpen, requiredRoles: [] }, // Everyone
+    { name: "Document Hub", href: "/document-hub", icon: FolderOpen, requiredRoles: ['admin'] }, // Admin only
     { name: "Jobs", href: "/jobs", icon: Briefcase, requiredRoles: ['admin', 'ceo', 'support_staff'] },
     { name: "Maintenance", href: "/maintenance", icon: Wrench, requiredRoles: ['admin', 'ceo', 'support_staff'] },
     { name: "Logistics", href: "/logistics", icon: Truck, requiredRoles: ['admin', 'ceo', 'support_staff'] },
@@ -112,29 +112,23 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { name: "RDP", href: "/rdp", icon: Monitor, requiredRoles: ['admin', 'ceo', 'support_staff'] },
     { name: "Nymbis RDP Cloud", href: "/nymbis-rdp-cloud", icon: Cloud, requiredRoles: ['admin', 'ceo', 'support_staff'] },
     { name: "Company Network", href: "/company-network", icon: Network, requiredRoles: ['admin', 'ceo', 'support_staff'] },
-    { name: "Document Import", href: "/document-import", icon: FileText, requiredRoles: ['admin', 'ceo', 'support_staff'] },
     { name: "Reports", href: "/reports", icon: FileBarChart, requiredRoles: ['admin', 'ceo', 'support_staff'] },
     { name: "Users", href: "/users", icon: Users, requiredRoles: ['admin'] }, // Admin only, not CEO
     { name: "Settings", href: "/settings", icon: Settings, requiredRoles: [] }, // Everyone
   ];
 
   // Filter navigation based on user roles
-  // TEMPORARY: Show all navigation items to all users (requested by @craigfelt)
-  // TODO: Re-enable role-based filtering later
-  const navigation = allNavigation;
-  
-  // Original role-based filtering (disabled for now):
-  // const navigation = allNavigation.filter(item => {
-  //   // If no roles required, show to everyone
-  //   if (item.requiredRoles.length === 0) return true;
-  //   
-  //   // Check if user has any of the required roles
-  //   if (item.requiredRoles.includes('admin') && isAdmin) return true;
-  //   if (item.requiredRoles.includes('ceo') && isCEO) return true;
-  //   if (item.requiredRoles.includes('support_staff') && isSupportStaff) return true;
-  //   
-  //   return false;
-  // });
+  const navigation = allNavigation.filter(item => {
+    // If no roles required, show to everyone
+    if (item.requiredRoles.length === 0) return true;
+    
+    // Check if user has any of the required roles
+    if (item.requiredRoles.includes('admin') && isAdmin) return true;
+    if (item.requiredRoles.includes('ceo') && isCEO) return true;
+    if (item.requiredRoles.includes('support_staff') && isSupportStaff) return true;
+    
+    return false;
+  });
 
   return (
     <div className="flex h-screen bg-background">

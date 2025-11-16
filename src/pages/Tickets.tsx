@@ -54,6 +54,9 @@ const Tickets = () => {
   const [timeLogMinutes, setTimeLogMinutes] = useState("");
   const [timeLogNotes, setTimeLogNotes] = useState("");
   const [timeLogs, setTimeLogs] = useState<any[]>([]);
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [currentUserBranch, setCurrentUserBranch] = useState("");
+  const [currentUserDeviceSerial, setCurrentUserDeviceSerial] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -63,14 +66,12 @@ const Tickets = () => {
         fetchUserProfile(session.user.id);
       }
     });
-
-    fetchTickets();
   }, [navigate]);
 
   const fetchUserProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("id, email, full_name, user_id")
+      .select("id, email, full_name, user_id, branch_id, device_serial_number")
       .eq("user_id", userId)
       .single();
 
@@ -78,17 +79,61 @@ const Tickets = () => {
       setCurrentUserId(data.id);
       setCurrentUserEmail(data.email || "");
       setCurrentUserName(data.full_name || "");
-      checkAdminRole(userId);
+      setCurrentUserDeviceSerial(data.device_serial_number || "");
+      
+      // Auto-fill user email in ticket form
+      setUserEmail(data.email || "");
+      
+      // Fetch branch name if branch_id exists
+      if (data.branch_id) {
+        const { data: branchData } = await supabase
+          .from("branches")
+          .select("name")
+          .eq("id", data.branch_id)
+          .single();
+        
+        if (branchData) {
+          setCurrentUserBranch(branchData.name);
+          setBranch(branchData.name); // Auto-fill branch in ticket form
+        }
+      }
+      
+      await checkAdminRole(userId);
       checkSupportRole(userId);
     }
   };
 
   const checkAdminRole = async (userId: string) => {
+    // Check if user has admin role
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin");
+
+    if (!roles || roles.length === 0) {
+      setAccessDenied(true);
+      setIsAdmin(false);
+      toast({
+        title: "Access Denied",
+        description: "Only administrators can access the Tickets Dashboard",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsAdmin(true);
+    fetchTickets();
   };
 
   const checkSupportRole = async (userId: string) => {
-    setIsSupportStaff(true);
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "support_staff");
+    
+    setIsSupportStaff(roles && roles.length > 0);
   };
 
   const fetchTickets = async () => {
@@ -126,6 +171,7 @@ const Tickets = () => {
       fault_type: faultType || null,
       user_email: userEmail || null,
       error_code: errorCode || null,
+      device_serial_number: currentUserDeviceSerial || null,
       created_by: currentUserId,
       assigned_to: assignedTo,
       status: "open" as any,
@@ -466,6 +512,29 @@ const Tickets = () => {
   const closedTickets = tickets.filter(t => t.status === 'closed');
   const resolvedTickets = tickets.filter(t => t.status === 'resolved');
   const pendingTickets = tickets.filter(t => t.status === 'pending');
+
+  if (accessDenied) {
+    return (
+      <DashboardLayout>
+        <div className="flex-1 flex items-center justify-center p-4 md:p-8">
+          <Card className="max-w-md">
+            <CardHeader>
+              <CardTitle className="text-destructive">Access Denied</CardTitle>
+              <CardDescription>
+                You do not have permission to access the Tickets Dashboard.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Only administrators can access this page. If you believe this is an error, 
+                please contact your system administrator.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
