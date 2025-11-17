@@ -38,12 +38,29 @@ function generateRandomPassword(length: number = 16): string {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("import-staff-users: Handler invoked", { method: req.method });
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Validate environment variables
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("import-staff-users: Missing environment variables");
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: "Server configuration error - missing required environment variables. Please contact your administrator." 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
     // Create Supabase client with service role key for admin operations
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
@@ -53,17 +70,40 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     // Get the request body
-    const { staff_user_ids }: ImportRequest = await req.json();
-
-    if (!staff_user_ids || !Array.isArray(staff_user_ids) || staff_user_ids.length === 0) {
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (jsonError) {
+      console.error("import-staff-users: Invalid JSON in request body", jsonError);
       return new Response(
-        JSON.stringify({ error: "staff_user_ids array is required" }),
+        JSON.stringify({ 
+          success: false,
+          error: "Invalid request format - request body must be valid JSON" 
+        }),
         { 
           status: 400, 
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
         }
       );
     }
+
+    const { staff_user_ids }: ImportRequest = requestBody;
+
+    if (!staff_user_ids || !Array.isArray(staff_user_ids) || staff_user_ids.length === 0) {
+      console.error("import-staff-users: Invalid staff_user_ids", { staff_user_ids });
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: "Invalid request - staff_user_ids must be a non-empty array of user IDs" 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    console.log(`import-staff-users: Processing ${staff_user_ids.length} staff user(s)`);
 
     const results: ImportResult[] = [];
     let successCount = 0;
@@ -80,19 +120,21 @@ const handler = async (req: Request): Promise<Response> => {
           .single();
 
         if (fetchError || !staffUser) {
+          console.error(`import-staff-users: Staff user ${staffUserId} not found`, fetchError);
           results.push({
             success: false,
-            error: "Staff user not found",
+            error: `Staff user with ID ${staffUserId} not found in database`,
           });
           errorCount++;
           continue;
         }
 
         if (!staffUser.email) {
+          console.warn(`import-staff-users: Staff user ${staffUser.username} has no email`);
           results.push({
             success: false,
             username: staffUser.username,
-            error: "Staff user has no email address",
+            error: "Staff user has no email address - email is required for system login",
           });
           errorCount++;
           continue;
@@ -105,11 +147,12 @@ const handler = async (req: Request): Promise<Response> => {
         );
 
         if (userExists) {
+          console.warn(`import-staff-users: User already exists with email ${staffUser.email}`);
           results.push({
             success: false,
             email: staffUser.email,
             username: staffUser.username,
-            error: "User already exists with this email",
+            error: "A user account already exists with this email address",
           });
           errorCount++;
           continue;
@@ -119,6 +162,7 @@ const handler = async (req: Request): Promise<Response> => {
         const password = generateRandomPassword(16);
 
         // Create the user using Supabase Admin API
+        console.log(`import-staff-users: Creating user account for ${staffUser.email}`);
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email: staffUser.email,
           password: password,
@@ -132,16 +176,19 @@ const handler = async (req: Request): Promise<Response> => {
         });
 
         if (createError || !newUser) {
+          console.error(`import-staff-users: Failed to create user ${staffUser.email}`, createError);
           results.push({
             success: false,
             email: staffUser.email,
             username: staffUser.username,
-            error: createError?.message || "Failed to create user",
+            error: `Failed to create user account: ${createError?.message || "Unknown error"}`,
           });
           errorCount++;
           continue;
         }
 
+        console.log(`import-staff-users: User created successfully ${staffUser.email}, updating profile`);
+        
         // Update the profile with additional information
         const { error: profileError } = await supabaseAdmin
           .from("profiles")
@@ -152,10 +199,11 @@ const handler = async (req: Request): Promise<Response> => {
           .eq("id", newUser.user.id);
 
         if (profileError) {
-          console.error("Failed to update profile:", profileError);
+          console.error(`import-staff-users: Failed to update profile for ${staffUser.email}`, profileError);
           // Don't fail the whole import if profile update fails
         }
 
+        console.log(`import-staff-users: Successfully imported user ${staffUser.email}`);
         results.push({
           success: true,
           email: staffUser.email,
@@ -165,15 +213,17 @@ const handler = async (req: Request): Promise<Response> => {
         });
         successCount++;
       } catch (error) {
-        console.error("Error processing staff user:", error);
+        console.error(`import-staff-users: Error processing staff user ${staffUserId}:`, error);
         results.push({
           success: false,
-          error: error instanceof Error ? error.message : "Unknown error",
+          error: `Failed to process user: ${error instanceof Error ? error.message : "Unknown error"}`,
         });
         errorCount++;
       }
     }
 
+    console.log(`import-staff-users: Import completed. Success: ${successCount}, Errors: ${errorCount}`);
+    
     return new Response(
       JSON.stringify({
         success: true,
@@ -187,10 +237,11 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error) {
-    console.error("Error in import-staff-users function:", error);
+    console.error("import-staff-users: Unexpected error in handler:", error);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Internal server error" 
+        success: false,
+        error: `Internal server error: ${error instanceof Error ? error.message : "Unknown error"}. Please contact your administrator.`
       }),
       { 
         status: 500, 

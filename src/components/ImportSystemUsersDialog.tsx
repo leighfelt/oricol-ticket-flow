@@ -135,8 +135,22 @@ export function ImportSystemUsersDialog() {
 
       if (error) {
         console.error("ImportSystemUsersDialog: Edge function error:", error);
-        toast.error("Failed to import users", {
-          description: `Error: ${error.message || "Unknown error"}. Check console for details.`
+        
+        // Provide more specific error messages based on error type
+        let errorDescription = error.message || "Unknown error";
+        
+        if (error.message?.includes("Failed to fetch") || error.message?.includes("NetworkError")) {
+          errorDescription = "Network error - unable to reach the server. Please check your internet connection and try again.";
+        } else if (error.message?.includes("JWT") || error.message?.includes("auth")) {
+          errorDescription = "Authentication error - your session may have expired. Please log out and log back in.";
+        } else if (error.message?.includes("CORS")) {
+          errorDescription = "Configuration error - the edge function may not be properly deployed. Contact your administrator.";
+        } else if (error.message?.includes("timeout")) {
+          errorDescription = "Request timeout - the operation took too long. Please try again with fewer users.";
+        }
+        
+        toast.error("Failed to invoke import function", {
+          description: `${errorDescription}\n\nTechnical details: ${error.message}\n\nCheck browser console for full error logs.`
         });
         throw error;
       }

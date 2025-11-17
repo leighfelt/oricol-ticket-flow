@@ -77,11 +77,43 @@ export function UserGroupsManagement() {
       return;
     }
 
+    console.log("UserGroupsManagement: Creating group:", { name: groupName, description: groupDescription });
+
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      toast.error("Not authenticated");
+      console.error("UserGroupsManagement: No active session");
+      toast.error("Authentication required", {
+        description: "Please log in to create groups"
+      });
       return;
     }
+
+    console.log("UserGroupsManagement: Current user ID:", session.user.id);
+    
+    // Check if user has admin role
+    console.log("UserGroupsManagement: Checking user permissions");
+    const { data: userRoles, error: rolesError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id);
+
+    if (rolesError) {
+      console.error("UserGroupsManagement: Error checking user roles:", rolesError);
+    } else {
+      console.log("UserGroupsManagement: User roles:", userRoles);
+    }
+
+    const hasAdminRole = userRoles?.some(r => r.role === 'admin') || false;
+    
+    if (!hasAdminRole) {
+      console.error("UserGroupsManagement: User does not have admin role");
+      toast.error("Permission denied", {
+        description: "Only administrators can create user groups. Please contact your administrator to grant you admin privileges."
+      });
+      return;
+    }
+
+    console.log("UserGroupsManagement: Attempting to insert group");
 
     // @ts-ignore - Table exists but types haven't regenerated yet
     const { error } = await (supabase as any)
@@ -93,9 +125,28 @@ export function UserGroupsManagement() {
       });
 
     if (error) {
-      toast.error("Failed to create group");
+      console.error("UserGroupsManagement: Database error creating group:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      
+      let errorDescription = error.message;
+      if (error.code === "23505") {
+        errorDescription = "A group with this name already exists. Please choose a different name.";
+      } else if (error.code === "42501") {
+        errorDescription = "Permission denied. You may not have the required admin privileges. Please check your user roles.";
+      } else if (error.message?.includes("violates row-level security")) {
+        errorDescription = "Row-level security policy violation. Please ensure you have admin role assigned in the user_roles table.";
+      }
+      
+      toast.error("Failed to create group", {
+        description: `${errorDescription}\n\nTechnical details: ${error.message}`
+      });
       console.error(error);
     } else {
+      console.log("UserGroupsManagement: Group created successfully");
       toast.success("Group created successfully");
       setCreateDialogOpen(false);
       setGroupName("");
@@ -109,6 +160,29 @@ export function UserGroupsManagement() {
       return;
     }
 
+    console.log("UserGroupsManagement: Deleting group:", groupId);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    // Check if user has admin role
+    const { data: userRoles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id);
+
+    const hasAdminRole = userRoles?.some(r => r.role === 'admin') || false;
+    
+    if (!hasAdminRole) {
+      toast.error("Permission denied", {
+        description: "Only administrators can delete user groups."
+      });
+      return;
+    }
+
     // @ts-ignore - Table exists but types haven't regenerated yet
     const { error } = await (supabase as any)
       .from("user_groups")
@@ -116,9 +190,21 @@ export function UserGroupsManagement() {
       .eq("id", groupId);
 
     if (error) {
-      toast.error("Failed to delete group");
+      console.error("UserGroupsManagement: Database error deleting group:", error);
+      
+      let errorDescription = error.message;
+      if (error.code === "42501") {
+        errorDescription = "Permission denied. You may not have the required admin privileges.";
+      } else if (error.message?.includes("violates row-level security")) {
+        errorDescription = "Row-level security policy violation. Please ensure you have admin role assigned.";
+      }
+      
+      toast.error("Failed to delete group", {
+        description: errorDescription
+      });
       console.error(error);
     } else {
+      console.log("UserGroupsManagement: Group deleted successfully");
       toast.success("Group deleted successfully");
       fetchGroups();
     }
@@ -130,11 +216,39 @@ export function UserGroupsManagement() {
       return;
     }
 
+    console.log("UserGroupsManagement: Adding member to group:", {
+      group: selectedGroup.name,
+      userId: selectedUserId
+    });
+
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      toast.error("Not authenticated");
+      console.error("UserGroupsManagement: No active session");
+      toast.error("Authentication required", {
+        description: "Please log in to add members"
+      });
       return;
     }
+
+    console.log("UserGroupsManagement: Current user ID:", session.user.id);
+    
+    // Check if user has admin role
+    const { data: userRoles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id);
+
+    const hasAdminRole = userRoles?.some(r => r.role === 'admin') || false;
+    
+    if (!hasAdminRole) {
+      console.error("UserGroupsManagement: User does not have admin role");
+      toast.error("Permission denied", {
+        description: "Only administrators can add group members. Please contact your administrator."
+      });
+      return;
+    }
+
+    console.log("UserGroupsManagement: Attempting to add member");
 
     // @ts-ignore - Table exists but types haven't regenerated yet
     const { error } = await (supabase as any)
@@ -146,13 +260,27 @@ export function UserGroupsManagement() {
       });
 
     if (error) {
+      console.error("UserGroupsManagement: Database error adding member:", {
+        code: error.code,
+        message: error.message,
+        details: error.details
+      });
+      
+      let errorDescription = error.message;
       if (error.code === '23505') {
-        toast.error("User is already a member of this group");
-      } else {
-        toast.error("Failed to add member");
-        console.error(error);
+        errorDescription = "This user is already a member of this group.";
+      } else if (error.code === "42501") {
+        errorDescription = "Permission denied. You may not have the required admin privileges.";
+      } else if (error.message?.includes("violates row-level security")) {
+        errorDescription = "Row-level security policy violation. Please ensure you have admin role assigned in the user_roles table.";
       }
+      
+      toast.error("Failed to add member", {
+        description: `${errorDescription}\n\nTechnical details: ${error.message}`
+      });
+      console.error(error);
     } else {
+      console.log("UserGroupsManagement: Member added successfully");
       toast.success("Member added successfully");
       setAddMemberDialogOpen(false);
       setSelectedUserId("");

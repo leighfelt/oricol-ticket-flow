@@ -270,6 +270,30 @@ const SharedFiles = () => {
       }
 
       console.log("SharedFiles: Current user ID:", session.user.id);
+      
+      // Check if user has admin role
+      console.log("SharedFiles: Checking user permissions");
+      const { data: userRoles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id);
+
+      if (rolesError) {
+        console.error("SharedFiles: Error checking user roles:", rolesError);
+      } else {
+        console.log("SharedFiles: User roles:", userRoles);
+      }
+
+      const hasAdminRole = userRoles?.some(r => r.role === 'admin') || false;
+      
+      if (!hasAdminRole) {
+        console.error("SharedFiles: User does not have admin role");
+        toast.error("Permission denied", {
+          description: "Only administrators can create folders. Please contact your administrator to grant you admin privileges."
+        });
+        return;
+      }
+
       console.log("SharedFiles: Attempting to insert folder into shared_folders table");
 
       const { error } = await supabase
@@ -291,13 +315,17 @@ const SharedFiles = () => {
         
         let errorDescription = error.message;
         if (error.code === "42501") {
-          errorDescription = "Permission denied. You may not have admin privileges required to create folders.";
+          errorDescription = "Permission denied. You may not have the required admin privileges. Please check your user roles.";
         } else if (error.code === "23505") {
-          errorDescription = "A folder with this name already exists in this location.";
+          errorDescription = "A folder with this name already exists in this location. Please choose a different name.";
+        } else if (error.code === "23503") {
+          errorDescription = "Invalid parent folder reference. The parent folder may have been deleted.";
+        } else if (error.message?.includes("violates row-level security")) {
+          errorDescription = "Row-level security policy violation. Please ensure you have admin role assigned in the user_roles table.";
         }
         
         toast.error("Failed to create folder", {
-          description: errorDescription
+          description: `${errorDescription}\n\nTechnical details: ${error.message}`
         });
         throw error;
       }
