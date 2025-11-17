@@ -42,29 +42,57 @@ export function ImportSystemUsersDialog() {
 
   const fetchStaffUsers = async () => {
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from("vpn_rdp_credentials")
-      .select("id, username, email, service_type, notes")
-      .not("email", "is", null) // Only users with email can become system users
-      .order("username");
+    console.log("ImportSystemUsersDialog: Fetching staff users from vpn_rdp_credentials");
+    
+    try {
+      const { data, error } = await supabase
+        .from("vpn_rdp_credentials")
+        .select("id, username, email, service_type, notes")
+        .not("email", "is", null) // Only users with email can become system users
+        .order("username");
 
-    if (error) {
-      toast.error("Failed to fetch staff users");
-      console.error(error);
-    } else {
+      if (error) {
+        console.error("ImportSystemUsersDialog: Error fetching staff users:", error);
+        toast.error("Failed to fetch staff users", {
+          description: `${error.message}. Check console for details.`
+        });
+        setStaffUsers([]);
+        return;
+      }
+
+      console.log("ImportSystemUsersDialog: Found staff users with emails:", data?.length || 0);
+
       // Filter out users who already have system accounts
-      const { data: existingUsers } = await supabase
+      console.log("ImportSystemUsersDialog: Checking for existing user profiles");
+      const { data: existingUsers, error: profileError } = await supabase
         .from("profiles")
         .select("email");
       
+      if (profileError) {
+        console.error("ImportSystemUsersDialog: Error fetching profiles:", profileError);
+        toast.error("Failed to check existing users", {
+          description: `${profileError.message}. Some users may already exist.`
+        });
+      }
+
       const existingEmails = new Set(existingUsers?.map(u => u.email?.toLowerCase()) || []);
       const availableUsers = (data || []).filter(
         user => user.email && !existingEmails.has(user.email.toLowerCase())
       );
       
+      console.log("ImportSystemUsersDialog: Available users for import:", availableUsers.length);
+      console.log("ImportSystemUsersDialog: Filtered out existing users:", (data?.length || 0) - availableUsers.length);
+      
       setStaffUsers(availableUsers);
+    } catch (error) {
+      console.error("ImportSystemUsersDialog: Unexpected error fetching staff users:", error);
+      toast.error("Unexpected error", {
+        description: error instanceof Error ? error.message : "Failed to load staff users"
+      });
+      setStaffUsers([]);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const toggleUser = (userId: string) => {
@@ -94,30 +122,66 @@ export function ImportSystemUsersDialog() {
     setIsImporting(true);
     const userIds = Array.from(selectedUsers);
 
+    console.log("ImportSystemUsersDialog: Starting import for user IDs:", userIds);
+
     try {
       // Call the edge function to create users with admin privileges
+      console.log("ImportSystemUsersDialog: Invoking edge function 'import-staff-users'");
       const { data, error } = await supabase.functions.invoke("import-staff-users", {
         body: { staff_user_ids: userIds },
       });
 
-      if (error) throw error;
+      console.log("ImportSystemUsersDialog: Edge function response:", { data, error });
+
+      if (error) {
+        console.error("ImportSystemUsersDialog: Edge function error:", error);
+        toast.error("Failed to import users", {
+          description: `Error: ${error.message || "Unknown error"}. Check console for details.`
+        });
+        throw error;
+      }
 
       if (!data || !data.success) {
-        throw new Error(data?.error || "Import failed");
+        const errorMsg = data?.error || "Import failed - no data returned";
+        console.error("ImportSystemUsersDialog: Import failed:", errorMsg);
+        toast.error("Failed to import users", {
+          description: errorMsg
+        });
+        throw new Error(errorMsg);
       }
+
+      console.log("ImportSystemUsersDialog: Import completed successfully:", {
+        total: data.total,
+        success_count: data.success_count,
+        error_count: data.error_count
+      });
 
       setImportResults(data.results || []);
       setShowResults(true);
       
-      toast.success(`Created ${data.success_count || 0} user${data.success_count !== 1 ? 's' : ''}`, {
-        description: `${data.error_count || 0} error${data.error_count !== 1 ? 's' : ''} occurred`
-      });
+      const successCount = data.success_count || 0;
+      const errorCount = data.error_count || 0;
+      
+      if (successCount > 0 && errorCount === 0) {
+        toast.success(`Successfully created ${successCount} user${successCount !== 1 ? 's' : ''}`);
+      } else if (successCount > 0 && errorCount > 0) {
+        toast.warning(`Created ${successCount} user${successCount !== 1 ? 's' : ''}`, {
+          description: `${errorCount} error${errorCount !== 1 ? 's' : ''} occurred. Check results for details.`
+        });
+      } else if (errorCount > 0) {
+        toast.error(`Failed to create users`, {
+          description: `${errorCount} error${errorCount !== 1 ? 's' : ''} occurred. Check results for details.`
+        });
+      }
     } catch (error) {
-      toast.error("Failed to import users");
-      console.error(error);
+      console.error("ImportSystemUsersDialog: Unexpected error during import:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      toast.error("Failed to import users", {
+        description: `${errorMessage}. Check browser console for detailed logs.`
+      });
+    } finally {
+      setIsImporting(false);
     }
-
-    setIsImporting(false);
   };
 
   const downloadResults = () => {
@@ -239,9 +303,9 @@ export function ImportSystemUsersDialog() {
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{result.email}</p>
-                        <p className="text-sm text-muted-foreground">{result.username}</p>
+                      <div className="flex-1">
+                        <p className="font-medium">{result.email || "N/A"}</p>
+                        <p className="text-sm text-muted-foreground">{result.username || "N/A"}</p>
                       </div>
                       <Badge variant={result.success ? "default" : "destructive"}>
                         {result.success ? "Success" : "Failed"}
@@ -250,15 +314,21 @@ export function ImportSystemUsersDialog() {
                     {result.success && result.password && (
                       <div className="mt-2">
                         <p className="text-xs font-medium">Generated Password:</p>
-                        <p className="text-sm font-mono bg-white p-2 rounded mt-1">
+                        <p className="text-sm font-mono bg-white p-2 rounded mt-1 break-all">
                           {result.password}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          ⚠️ Save this password - it cannot be retrieved later
                         </p>
                       </div>
                     )}
                     {result.error && (
-                      <p className="text-sm text-red-600 mt-2">{result.error}</p>
+                      <div className="mt-2 p-2 bg-red-100 rounded">
+                        <p className="text-xs font-medium text-red-800">Error Details:</p>
+                        <p className="text-sm text-red-600 mt-1">{result.error}</p>
+                      </div>
                     )}
-                    {result.message && (
+                    {result.message && !result.error && (
                       <p className="text-sm text-muted-foreground mt-2">{result.message}</p>
                     )}
                   </div>

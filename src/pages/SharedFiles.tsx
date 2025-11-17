@@ -142,6 +142,8 @@ const SharedFiles = () => {
   };
 
   const fetchFolders = async () => {
+    console.log("SharedFiles: Fetching folders for parent_folder_id:", currentFolderId);
+    
     try {
       const query = supabase
         .from("shared_folders" as any)
@@ -155,7 +157,19 @@ const SharedFiles = () => {
 
       const { data, error } = await query.order("name");
 
-      if (error) throw error;
+      if (error) {
+        console.error("SharedFiles: Error fetching folders:", {
+          code: error.code,
+          message: error.message,
+          details: error.details
+        });
+        toast.error("Failed to load folders", {
+          description: error.message
+        });
+        throw error;
+      }
+      
+      console.log("SharedFiles: Fetched folders:", data?.length || 0);
       setFolders((data as any) || []);
       
       // Build folder path
@@ -165,7 +179,8 @@ const SharedFiles = () => {
         setFolderPath([]);
       }
     } catch (error) {
-      console.error("Error fetching folders:", error);
+      console.error("SharedFiles: Unexpected error fetching folders:", error);
+      setFolders([]);
     }
   };
 
@@ -238,9 +253,24 @@ const SharedFiles = () => {
       return;
     }
 
+    console.log("SharedFiles: Creating folder:", {
+      name: newFolderName,
+      description: newFolderDescription,
+      parent_folder_id: currentFolderId
+    });
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        console.error("SharedFiles: No active session found");
+        toast.error("Authentication required", {
+          description: "Please log in to create folders"
+        });
+        return;
+      }
+
+      console.log("SharedFiles: Current user ID:", session.user.id);
+      console.log("SharedFiles: Attempting to insert folder into shared_folders table");
 
       const { error } = await supabase
         .from("shared_folders" as any)
@@ -251,16 +281,40 @@ const SharedFiles = () => {
           created_by: session.user.id,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error("SharedFiles: Database error creating folder:", {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        
+        let errorDescription = error.message;
+        if (error.code === "42501") {
+          errorDescription = "Permission denied. You may not have admin privileges required to create folders.";
+        } else if (error.code === "23505") {
+          errorDescription = "A folder with this name already exists in this location.";
+        }
+        
+        toast.error("Failed to create folder", {
+          description: errorDescription
+        });
+        throw error;
+      }
 
+      console.log("SharedFiles: Folder created successfully");
       toast.success("Folder created successfully");
       setIsCreateFolderOpen(false);
       setNewFolderName("");
       setNewFolderDescription("");
       fetchFolders();
     } catch (error) {
-      console.error("Error creating folder:", error);
-      toast.error("Failed to create folder");
+      console.error("SharedFiles: Unexpected error creating folder:", error);
+      if (error instanceof Error && !error.message.includes("Failed to create folder")) {
+        toast.error("Unexpected error", {
+          description: `${error.message}. Check console for details.`
+        });
+      }
     }
   };
 
@@ -270,21 +324,47 @@ const SharedFiles = () => {
       return;
     }
 
+    console.log("SharedFiles: Uploading file:", {
+      name: selectedFile.name,
+      size: selectedFile.size,
+      type: selectedFile.type,
+      folder_id: currentFolderId
+    });
+
     try {
       setIsUploading(true);
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        console.error("SharedFiles: No active session for file upload");
+        toast.error("Authentication required", {
+          description: "Please log in to upload files"
+        });
+        return;
+      }
 
       const timestamp = Date.now();
       const fileExt = selectedFile.name.split('.').pop();
       const filename = `${timestamp}_${selectedFile.name}`;
       const filePath = `shared-files/${filename}`;
 
+      console.log("SharedFiles: Uploading to storage path:", filePath);
+
       const { error: uploadError } = await supabase.storage
         .from('documents')
         .upload(filePath, selectedFile);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("SharedFiles: Storage upload error:", {
+          message: uploadError.message,
+          statusCode: uploadError.statusCode
+        });
+        toast.error("Failed to upload file to storage", {
+          description: uploadError.message
+        });
+        throw uploadError;
+      }
+
+      console.log("SharedFiles: File uploaded to storage, creating database record");
 
       const { error: dbError } = await supabase
         .from("shared_folder_files" as any)
@@ -298,15 +378,30 @@ const SharedFiles = () => {
           uploaded_by: session.user.id,
         });
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error("SharedFiles: Database insert error:", {
+          code: dbError.code,
+          message: dbError.message,
+          details: dbError.details
+        });
+        toast.error("Failed to save file metadata", {
+          description: dbError.message
+        });
+        throw dbError;
+      }
 
+      console.log("SharedFiles: File uploaded successfully");
       toast.success("File uploaded successfully");
       setIsUploadFileOpen(false);
       setSelectedFile(null);
       fetchFiles();
     } catch (error) {
-      console.error("Error uploading file:", error);
-      toast.error("Failed to upload file");
+      console.error("SharedFiles: Unexpected error uploading file:", error);
+      if (error instanceof Error && !error.message.includes("Failed to")) {
+        toast.error("Unexpected error during upload", {
+          description: `${error.message}. Check console for details.`
+        });
+      }
     } finally {
       setIsUploading(false);
     }
