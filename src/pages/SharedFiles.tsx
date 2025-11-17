@@ -382,12 +382,9 @@ const SharedFiles = () => {
         .upload(filePath, selectedFile);
 
       if (uploadError) {
-        console.error("SharedFiles: Storage upload error:", {
-          message: uploadError.message,
-          statusCode: uploadError.statusCode
-        });
+        console.error("SharedFiles: Storage upload error:", uploadError);
         toast.error("Failed to upload file to storage", {
-          description: uploadError.message
+          description: uploadError.message || "Unknown storage error"
         });
         throw uploadError;
       }
