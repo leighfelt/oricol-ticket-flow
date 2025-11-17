@@ -16,6 +16,13 @@ Welcome! This guide helps you work with database (SQL) changes on **Lovable** wh
 
 **→ [FIX_RLS_NOW.sql](./FIX_RLS_NOW.sql)** - Ready-to-use SQL fix (just paste and run)
 
+### Need to Fix Shared Folders or User Groups?
+**→ [QUICK_FIX_SHARED_FOLDERS.md](./QUICK_FIX_SHARED_FOLDERS.md)** - Fix "table not found" errors for shared folders
+
+**→ [LOVABLE_FIX_ALL_TABLES.sql](./LOVABLE_FIX_ALL_TABLES.sql)** - Complete fix for all tables (just paste and run)
+
+**→ [FIX_SUMMARY_LOVABLE_SQL.md](./FIX_SUMMARY_LOVABLE_SQL.md)** - Detailed explanation of what was fixed
+
 ### Need to Find Your Supabase?
 **→ [FIND_YOUR_SUPABASE_CONNECTION.md](./FIND_YOUR_SUPABASE_CONNECTION.md)** - How to access your Supabase dashboard
 
@@ -87,7 +94,10 @@ Option C: Check your code
 
 ### Troubleshooting & Fixes
 - **[QUICKFIX_START_HERE.md](./QUICKFIX_START_HERE.md)** - Fix upload/RLS errors
+- **[QUICK_FIX_SHARED_FOLDERS.md](./QUICK_FIX_SHARED_FOLDERS.md)** - Fix shared folders/groups errors
 - **[FIX_RLS_NOW.sql](./FIX_RLS_NOW.sql)** - SQL fix for storage errors
+- **[LOVABLE_FIX_ALL_TABLES.sql](./LOVABLE_FIX_ALL_TABLES.sql)** - SQL fix for all tables
+- **[FIX_SUMMARY_LOVABLE_SQL.md](./FIX_SUMMARY_LOVABLE_SQL.md)** - Detailed fix documentation
 - **[FIND_YOUR_SUPABASE_CONNECTION.md](./FIND_YOUR_SUPABASE_CONNECTION.md)** - Find your Supabase
 
 ### General Setup

@@ -1,18 +1,6 @@
--- ============================================================================
--- FIX ALL TABLE ISSUES - Run this in Lovable SQL Editor
--- ============================================================================
--- This script creates all missing tables and fixes RLS policies for the
--- Shared Files system and User Groups system.
--- 
--- HOW TO RUN THIS ON LOVABLE:
--- 1. Go to your Lovable project
--- 2. Click on "Database" or "Supabase" in the left sidebar
--- 3. Click on "SQL Editor"
--- 4. Copy and paste this ENTIRE file
--- 5. Click "Run" or "Execute"
--- 
--- This script is safe to run multiple times (uses IF NOT EXISTS)
--- ============================================================================
+-- Migration: Fix shared folders dependencies
+-- This migration creates the missing dependencies for shared folders and user groups
+-- It's safe to run multiple times (uses IF NOT EXISTS and conditional policy creation)
 
 -- Create handle_updated_at function if it doesn't exist
 -- This function is used by triggers to automatically update updated_at timestamps
@@ -387,13 +375,11 @@ CREATE POLICY "Users can view folders they have permission to"
   ON public.shared_folders FOR SELECT
   TO authenticated
   USING (
-    -- Admins can see all
     EXISTS (
       SELECT 1 FROM public.user_roles
       WHERE user_id = auth.uid() AND role = 'admin'
     )
     OR
-    -- Users can see folders they have permission to view
     EXISTS (
       SELECT 1 FROM public.shared_folder_permissions
       WHERE folder_id = shared_folders.id
@@ -407,7 +393,6 @@ CREATE POLICY "Users can view folders they have permission to"
       )
     )
     OR
-    -- Users can see folders they created
     created_by = auth.uid()
   );
 
@@ -434,13 +419,11 @@ CREATE POLICY "Users can view files in accessible folders"
   ON public.shared_folder_files FOR SELECT
   TO authenticated
   USING (
-    -- Admins can see all
     EXISTS (
       SELECT 1 FROM public.user_roles
       WHERE user_id = auth.uid() AND role = 'admin'
     )
     OR
-    -- Users can see files in folders they have view permission to
     EXISTS (
       SELECT 1 FROM public.shared_folder_permissions
       WHERE folder_id = shared_folder_files.folder_id
@@ -454,7 +437,6 @@ CREATE POLICY "Users can view files in accessible folders"
       )
     )
     OR
-    -- Users can see files they uploaded
     uploaded_by = auth.uid()
   );
 
@@ -463,13 +445,11 @@ CREATE POLICY "Users can upload files to folders with permission"
   ON public.shared_folder_files FOR INSERT
   TO authenticated
   WITH CHECK (
-    -- Admins can upload anywhere
     EXISTS (
       SELECT 1 FROM public.user_roles
       WHERE user_id = auth.uid() AND role = 'admin'
     )
     OR
-    -- Users can upload to folders they have upload permission to
     EXISTS (
       SELECT 1 FROM public.shared_folder_permissions
       WHERE folder_id = shared_folder_files.folder_id
@@ -489,13 +469,11 @@ CREATE POLICY "Users can delete files with permission"
   ON public.shared_folder_files FOR DELETE
   TO authenticated
   USING (
-    -- Admins can delete anything
     EXISTS (
       SELECT 1 FROM public.user_roles
       WHERE user_id = auth.uid() AND role = 'admin'
     )
     OR
-    -- Users can delete files in folders they have delete permission to
     EXISTS (
       SELECT 1 FROM public.shared_folder_permissions
       WHERE folder_id = shared_folder_files.folder_id
@@ -509,7 +487,6 @@ CREATE POLICY "Users can delete files with permission"
       )
     )
     OR
-    -- Users can delete their own uploads
     uploaded_by = auth.uid()
   );
 
@@ -547,6 +524,32 @@ CREATE POLICY "Admins can manage permissions"
     )
   );
 
+-- Add triggers for updated_at
+CREATE TRIGGER update_user_groups_updated_at
+  BEFORE UPDATE ON public.user_groups
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER update_user_permissions_updated_at
+  BEFORE UPDATE ON public.user_permissions
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER update_shared_folders_updated_at
+  BEFORE UPDATE ON public.shared_folders
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER update_shared_folder_files_updated_at
+  BEFORE UPDATE ON public.shared_folder_files
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER update_shared_folder_permissions_updated_at
+  BEFORE UPDATE ON public.shared_folder_permissions
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_updated_at();
+
 -- Add comments for documentation
 COMMENT ON TABLE public.user_groups IS 'User groups for organizing users and managing permissions';
 COMMENT ON TABLE public.user_group_members IS 'Junction table for user group membership';
@@ -556,22 +559,3 @@ COMMENT ON TABLE public.shared_files IS 'File sharing between users and groups';
 COMMENT ON TABLE public.shared_folders IS 'Folder structure for organizing shared files';
 COMMENT ON TABLE public.shared_folder_files IS 'Files stored in shared folders';
 COMMENT ON TABLE public.shared_folder_permissions IS 'Permissions for accessing shared folders';
-
--- Success message
-DO $$
-BEGIN
-  RAISE NOTICE '============================================================';
-  RAISE NOTICE '✅ All required functions created!';
-  RAISE NOTICE '✅ Documents table verified/created!';
-  RAISE NOTICE '✅ User Groups tables created successfully!';
-  RAISE NOTICE '✅ Shared Files tables created successfully!';
-  RAISE NOTICE '✅ Shared Folders tables created successfully!';
-  RAISE NOTICE '✅ All RLS policies configured!';
-  RAISE NOTICE '✅ All indexes and triggers added!';
-  RAISE NOTICE '============================================================';
-  RAISE NOTICE 'Setup Complete! You can now:';
-  RAISE NOTICE '  - Create user groups';
-  RAISE NOTICE '  - Create shared folders';
-  RAISE NOTICE '  - Share files with users and groups';
-  RAISE NOTICE '============================================================';
-END $$;

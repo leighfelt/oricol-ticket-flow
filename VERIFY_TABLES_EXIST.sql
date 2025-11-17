@@ -16,6 +16,7 @@ DECLARE
   table_count INTEGER;
   missing_tables TEXT[];
   required_tables TEXT[] := ARRAY[
+    'documents',
     'user_groups',
     'user_group_members', 
     'group_permissions',
@@ -49,6 +50,19 @@ BEGIN
   
   RAISE NOTICE '============================================================';
   
+  -- Check if handle_updated_at function exists
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p
+    JOIN pg_namespace n ON p.pronamespace = n.oid
+    WHERE n.nspname = 'public' AND p.proname = 'handle_updated_at'
+  ) THEN
+    RAISE NOTICE '✅ Function exists: handle_updated_at()';
+  ELSE
+    RAISE NOTICE '❌ Function missing: handle_updated_at()';
+  END IF;
+  
+  RAISE NOTICE '============================================================';
+  
   IF array_length(missing_tables, 1) IS NULL THEN
     RAISE NOTICE '🎉 SUCCESS! All required tables exist!';
     RAISE NOTICE 'You can now use the Shared Files feature.';
@@ -69,6 +83,7 @@ SELECT
 FROM pg_stat_user_tables
 WHERE schemaname = 'public'
   AND tablename IN (
+    'documents',
     'user_groups',
     'user_group_members',
     'group_permissions', 
@@ -91,6 +106,7 @@ FROM pg_tables t
 JOIN pg_class c ON c.relname = t.tablename
 WHERE schemaname = 'public'
   AND tablename IN (
+    'documents',
     'user_groups',
     'user_group_members',
     'group_permissions',
@@ -116,6 +132,7 @@ SELECT
 FROM pg_policies
 WHERE schemaname = 'public'
   AND tablename IN (
+    'documents',
     'user_groups',
     'user_group_members',
     'group_permissions',

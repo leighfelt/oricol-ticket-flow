@@ -39,11 +39,14 @@ You should see success messages like:
 
 ## What This Fix Does
 
-This script creates all the missing tables:
+This script creates all the missing tables and dependencies:
+- ✅ `handle_updated_at()` function - Required for automatic timestamp updates
+- ✅ `documents` - Core table for file metadata (required by shared_files)
 - ✅ `user_groups` - For organizing users into groups
 - ✅ `user_group_members` - For managing group membership
 - ✅ `group_permissions` - For group-level permissions
 - ✅ `user_permissions` - For individual user permissions
+- ✅ `shared_files` - For sharing individual documents
 - ✅ `shared_folders` - For the folder structure
 - ✅ `shared_folder_files` - For files within folders
 - ✅ `shared_folder_permissions` - For folder access control
