@@ -125,56 +125,59 @@ export function ImportSystemUsersDialog() {
     console.log("ImportSystemUsersDialog: Starting import for user IDs:", userIds);
 
     try {
-      // Call the edge function to create users with admin privileges
-      console.log("ImportSystemUsersDialog: Invoking edge function 'import-staff-users'");
-      const { data, error } = await supabase.functions.invoke("import-staff-users", {
-        body: { staff_user_ids: userIds },
+      // Call the database function to create users
+      console.log("ImportSystemUsersDialog: Calling database function import_system_users_from_staff");
+      
+      // @ts-expect-error - RPC function exists but types not yet regenerated
+      const { data, error } = await supabase.rpc('import_system_users_from_staff', {
+        staff_user_ids: userIds
       });
 
-      console.log("ImportSystemUsersDialog: Edge function response:", { data, error });
+      console.log("ImportSystemUsersDialog: Database function response:", { data, error });
 
       if (error) {
-        console.error("ImportSystemUsersDialog: Edge function error:", error);
+        console.error("ImportSystemUsersDialog: Database function error:", error);
         
-        // Provide more specific error messages based on error type
-        let errorDescription = error.message || "Unknown error";
-        
-        if (error.message?.includes("Failed to fetch") || error.message?.includes("NetworkError")) {
-          errorDescription = "Network error - unable to reach the server. Please check your internet connection and try again.";
-        } else if (error.message?.includes("JWT") || error.message?.includes("auth")) {
+        // Provide specific error messages based on error code
+        let errorDescription = error.message;
+        if (error.message.includes("permission denied") || error.code === '42501') {
+          errorDescription = "Only administrators can import users. Please contact your administrator to grant you admin privileges.";
+        } else if (error.message.includes("does not exist") || error.code === 'PGRST116') {
+          errorDescription = "Import function not found. Database migration may not have been applied yet. Please contact support.";
+        } else if (error.message.includes("JWT") || error.message.includes("auth")) {
           errorDescription = "Authentication error - your session may have expired. Please log out and log back in.";
-        } else if (error.message?.includes("CORS")) {
-          errorDescription = "Configuration error - the edge function may not be properly deployed. Contact your administrator.";
-        } else if (error.message?.includes("timeout")) {
-          errorDescription = "Request timeout - the operation took too long. Please try again with fewer users.";
+        } else if (error.code === '23505') {
+          errorDescription = "One or more users already exist in the system.";
         }
         
-        toast.error("Failed to invoke import function", {
-          description: `${errorDescription}\n\nTechnical details: ${error.message}\n\nCheck browser console for full error logs.`
+        toast.error("Failed to import users", {
+          description: `${errorDescription}\n\nTechnical details: ${error.message}\n\nError code: ${error.code || 'N/A'}`,
+          duration: 6000
         });
         throw error;
       }
 
-      if (!data || !data.success) {
-        const errorMsg = data?.error || "Import failed - no data returned";
-        console.error("ImportSystemUsersDialog: Import failed:", errorMsg);
+      const responseData = data as any;
+      
+      if (!responseData || !responseData.results) {
+        console.error("ImportSystemUsersDialog: Invalid response format:", responseData);
         toast.error("Failed to import users", {
-          description: errorMsg
+          description: "Invalid response from database function. Migration may not have been applied. Check console for details."
         });
-        throw new Error(errorMsg);
+        throw new Error("Invalid response format");
       }
 
       console.log("ImportSystemUsersDialog: Import completed successfully:", {
-        total: data.total,
-        success_count: data.success_count,
-        error_count: data.error_count
+        total: responseData.total_users,
+        success_count: responseData.successful_imports,
+        error_count: responseData.failed_imports
       });
 
-      setImportResults(data.results || []);
+      setImportResults(responseData.results || []);
       setShowResults(true);
       
-      const successCount = data.success_count || 0;
-      const errorCount = data.error_count || 0;
+      const successCount = responseData.successful_imports || 0;
+      const errorCount = responseData.failed_imports || 0;
       
       if (successCount > 0 && errorCount === 0) {
         toast.success(`Successfully created ${successCount} user${successCount !== 1 ? 's' : ''}`);
