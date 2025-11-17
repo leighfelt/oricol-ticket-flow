@@ -1,6 +1,14 @@
 # 🚀 Quick Migration Guide for Lovable
 
-## After Pulling from GitHub
+## Can't Run CLI Commands on Lovable?
+
+**⭐ See [LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** - Complete guide for applying SQL changes without CLI access!
+
+**Quick answer**: You can apply migrations directly in the Supabase SQL Editor. No CLI needed!
+
+---
+
+## After Pulling from GitHub (If you have CLI access)
 
 If you pulled code changes from GitHub that include database migrations, run:
 

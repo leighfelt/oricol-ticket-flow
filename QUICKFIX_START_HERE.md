@@ -8,6 +8,8 @@ You're getting this error when uploading documents or images:
 
 ## ✅ The Solution (2 Minutes)
 
+**📝 Working on Lovable?** See **[LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** for step-by-step instructions!
+
 ### Step 1: Apply SQL Fix in Supabase
 
 1. **Open Supabase Dashboard**

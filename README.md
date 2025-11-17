@@ -8,20 +8,37 @@ A modern, professional helpdesk and asset management system built with React, Ty
 
 **This app runs on Lovable** - All code changes sync automatically between GitHub and Lovable.
 
+### 🎯 New to Lovable? Start Here!
+- **⭐ [LOVABLE_START_HERE.md](./LOVABLE_START_HERE.md)** - **Complete guide for Lovable users**
+- **⭐ [LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** - **How to edit SQL without CLI**
+- **⭐ [LOVABLE_SQL_CHEATSHEET.md](./LOVABLE_SQL_CHEATSHEET.md)** - **Quick reference**
+- **⭐ [LOVABLE_SQL_FAQ.md](./LOVABLE_SQL_FAQ.md)** - **Frequently asked questions**
+
 ### Making Changes:
 1. **Edit code on GitHub** - Make changes here and commit them
 2. **Lovable syncs automatically** - Your changes appear in Lovable
 3. **App updates live** - The app running on Lovable updates with your changes
-4. **Apply database changes** - If migrations are included, run `npm run migrate`
+4. **Apply database changes** - See [LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md) (no CLI needed!)
 
 ### 🔄 Database Migrations (Important!)
+
+**Working on Lovable without CLI access? (Most users)**
+- **⭐ [LOVABLE_START_HERE.md](./LOVABLE_START_HERE.md)** - **START HERE!**
+- **⭐ [LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** - **Complete guide (no CLI needed)**
+- **⭐ [LOVABLE_SQL_CHEATSHEET.md](./LOVABLE_SQL_CHEATSHEET.md)** - **Quick reference**
+
+**Have CLI access?**
 When pulling code from GitHub that includes database changes:
 ```bash
 npm run migrate
 ```
 
-**Documentation**:
-- **[MIGRATION_QUICKSTART.md](./MIGRATION_QUICKSTART.md)** - Quick start guide for Lovable users
+**All Documentation**:
+- **[LOVABLE_START_HERE.md](./LOVABLE_START_HERE.md)** - Start here for Lovable users
+- **[LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** - Edit SQL on Lovable (no CLI)
+- **[LOVABLE_SQL_CHEATSHEET.md](./LOVABLE_SQL_CHEATSHEET.md)** - Quick reference cheat sheet
+- **[LOVABLE_SQL_FAQ.md](./LOVABLE_SQL_FAQ.md)** - Frequently asked questions
+- **[MIGRATION_QUICKSTART.md](./MIGRATION_QUICKSTART.md)** - Quick start guide
 - **[MIGRATION_CHEATSHEET.md](./MIGRATION_CHEATSHEET.md)** - Command reference
 - **[SUPABASE_MIGRATIONS.md](./SUPABASE_MIGRATIONS.md)** - Complete migration guide
 
