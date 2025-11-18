@@ -107,12 +107,18 @@ npm run migrate
 
 **Choose your setup:**
 
-1. **💰 $0 Cost - Local Development** (Recommended for testing)
+1. **🐳 Docker Setup** (Easiest - Recommended for local development)
+   - **NEW!** One-command setup with Docker
+   - See [DOCKER_SETUP.md](./DOCKER_SETUP.md) for complete guide
+   - Run `./start-docker.sh` to get started in minutes
+   - Everything runs in containers - no manual configuration
+
+2. **💰 $0 Cost - Local Development** (Manual setup)
    - Run 100% free on your computer
    - See [LOCAL_SETUP.md](./LOCAL_SETUP.md) for step-by-step guide
    - Uses Docker to run Supabase locally
 
-2. **☁️ $0 Cost - Cloud Free Tier** (Recommended for production)
+3. **☁️ $0 Cost - Cloud Free Tier** (Recommended for production)
    - Use Supabase free tier (500MB database, no credit card required)
    - See [DEPLOYMENT.md](./DEPLOYMENT.md) for all free hosting options
    - Deploy to Netlify, Vercel, or Cloudflare Pages (all free)

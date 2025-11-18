@@ -79,11 +79,73 @@ const Tickets = () => {
   }, [navigate]);
 
   const fetchUserProfile = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("id, email, full_name, user_id, device_serial_number, branch_id" as any)
       .eq("user_id", userId)
       .single();
+
+    // If profile doesn't exist, create it
+    if (error || !data) {
+      console.log("Profile not found, creating new profile for user:", userId);
+      
+      // Get user data from auth.users
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Create the profile
+        const { data: newProfile, error: createError } = await supabase
+          .from("profiles")
+          .insert([{
+            user_id: userId,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || "User"
+          }])
+          .select("id, email, full_name, user_id, device_serial_number, branch_id" as any)
+          .single();
+
+        if (createError) {
+          console.error("Error creating profile:", createError);
+          toast({
+            title: "Profile Error",
+            description: "Could not create user profile. Please contact support.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (newProfile) {
+          // Check if this is an admin email and assign admin role if needed
+          const adminEmails = ['craig@zerobitone.co.za', 'admin@oricol.co.za', 'admin@zerobitone.co.za'];
+          if (user.email && adminEmails.includes(user.email.toLowerCase())) {
+            console.log("Auto-assigning admin role to:", user.email);
+            // Insert admin role
+            await supabase.from("user_roles").insert([
+              { user_id: userId, role: 'admin' }
+            ]);
+            // Insert user role as well
+            await supabase.from("user_roles").insert([
+              { user_id: userId, role: 'user' }
+            ]);
+          } else {
+            // Insert default user role
+            await supabase.from("user_roles").insert([
+              { user_id: userId, role: 'user' }
+            ]);
+          }
+
+          setCurrentUserId((newProfile as any).id);
+          setCurrentUserEmail((newProfile as any).email || "");
+          setCurrentUserName((newProfile as any).full_name || "");
+          setCurrentUserDeviceSerial((newProfile as any).device_serial_number || "");
+          setUserEmail((newProfile as any).email || "");
+
+          await checkAdminRole(userId);
+          checkSupportRole(userId);
+        }
+      }
+      return;
+    }
 
     if (data) {
       setCurrentUserId((data as any).id);
@@ -152,9 +214,10 @@ const Tickets = () => {
     e.preventDefault();
 
     if (!currentUserId) {
+      console.error("Cannot create ticket: currentUserId is null");
       toast({
         title: "Error",
-        description: "User profile not found",
+        description: "User profile not found. Please refresh the page and try again. If the problem persists, contact support.",
         variant: "destructive",
       });
       return;

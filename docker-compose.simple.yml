@@ -1,0 +1,30 @@
+# Simple Docker Compose for Local Development
+# This uses Supabase CLI in the background (npx supabase start)
+# and only containerizes the frontend application
+
+version: '3.8'
+
+services:
+  # Frontend application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: oricol-helpdesk-app
+    ports:
+      - "8080:8080"
+    environment:
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-http://host.docker.internal:54321}
+      - VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
+      - VITE_SUPABASE_PROJECT_ID=${VITE_SUPABASE_PROJECT_ID:-local}
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - /app/node_modules
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  node_modules:
