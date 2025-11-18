@@ -14,11 +14,6 @@ A modern, professional helpdesk and asset management system built with React, Ty
 - **⭐ [LOVABLE_SQL_CHEATSHEET.md](./LOVABLE_SQL_CHEATSHEET.md)** - **Quick reference**
 - **⭐ [LOVABLE_SQL_FAQ.md](./LOVABLE_SQL_FAQ.md)** - **Frequently asked questions**
 
-### 🔧 Troubleshooting
-- **⚡ [QUICKSTART_PGRST205_FIX.md](./QUICKSTART_PGRST205_FIX.md)** - **Quick fix for PGRST205 error (2 min)**
-- **⚠️ [DEPLOYMENT_FIX_SCHEMA_CACHE.md](./DEPLOYMENT_FIX_SCHEMA_CACHE.md)** - **Detailed fix for "table not found" errors**
-- **⭐ [QUICK_FIX_SHARED_FOLDERS.md](./QUICK_FIX_SHARED_FOLDERS.md)** - **Quick fix for shared folders**
-
 ### Making Changes:
 1. **Edit code on GitHub** - Make changes here and commit them
 2. **Lovable syncs automatically** - Your changes appear in Lovable
@@ -112,18 +107,12 @@ npm run migrate
 
 **Choose your setup:**
 
-1. **🐳 Docker Setup** (Easiest - Recommended for local development)
-   - **NEW!** One-command setup with Docker
-   - See [DOCKER_SETUP.md](./DOCKER_SETUP.md) for complete guide
-   - Run `./start-docker.sh` to get started in minutes
-   - Everything runs in containers - no manual configuration
-
-2. **💰 $0 Cost - Local Development** (Manual setup)
+1. **💰 $0 Cost - Local Development** (Recommended for testing)
    - Run 100% free on your computer
    - See [LOCAL_SETUP.md](./LOCAL_SETUP.md) for step-by-step guide
    - Uses Docker to run Supabase locally
 
-3. **☁️ $0 Cost - Cloud Free Tier** (Recommended for production)
+2. **☁️ $0 Cost - Cloud Free Tier** (Recommended for production)
    - Use Supabase free tier (500MB database, no credit card required)
    - See [DEPLOYMENT.md](./DEPLOYMENT.md) for all free hosting options
    - Deploy to Netlify, Vercel, or Cloudflare Pages (all free)
