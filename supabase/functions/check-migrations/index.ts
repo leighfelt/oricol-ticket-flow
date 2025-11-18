@@ -95,9 +95,6 @@ serve(async (req) => {
       "20251118031628_a1b4b539-b26d-419f-93d1-5a8e855ce824.sql",
       "20251118063100_fix_user_groups_description_nullable.sql",
       "20251118092000_add_file_version_history.sql",
-      "20251118103000_create_exec_sql_function.sql",
-      "20251118103500_create_admin_email_patterns.sql",
-      "20251118105000_fix_rls_and_ntfs_permissions.sql",
       "verify_admin_roles.sql",
     ];
 

@@ -191,41 +191,41 @@ const Users = () => {
     // Only update roles if they have changed
     const rolesChanged = JSON.stringify([...editRoles].sort()) !== JSON.stringify([...systemUser.roles].sort());
     if (rolesChanged) {
-      // Update user roles via edge function (bypasses RLS)
-      try {
-        const { data, error } = await supabase.functions.invoke('manage-user-roles', {
-          body: {
-            targetUserId: systemUser.user_id,
-            rolesToSet: editRoles,
-          },
-        });
+      // Delete existing roles and insert new ones
+      const { error: deleteError } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", systemUser.user_id);
 
-        if (error) {
-          console.error("Error managing roles:", error);
-          toast({
-            title: "Error",
-            description: `Failed to update user roles: ${error.message}`,
-            variant: "destructive",
-          });
-          return;
-        }
-
-        if (data && !data.success) {
-          toast({
-            title: "Error",
-            description: data.error || "Failed to update user roles",
-            variant: "destructive",
-          });
-          return;
-        }
-      } catch (error: any) {
-        console.error("Failed to manage user roles:", error);
+      if (deleteError) {
+        console.error("Delete roles error:", deleteError);
         toast({
           title: "Error",
-          description: error.message || "Failed to update user roles",
+          description: `Failed to update user roles: ${deleteError.message}`,
           variant: "destructive",
         });
         return;
+      }
+
+      if (editRoles.length > 0) {
+        const rolesToInsert = editRoles.map(role => ({
+          user_id: systemUser.user_id,
+          role: role,
+        }));
+
+        const { error: insertError } = await (supabase as any)
+          .from("user_roles")
+          .insert(rolesToInsert);
+
+        if (insertError) {
+          console.error("Insert roles error:", insertError);
+          toast({
+            title: "Error",
+            description: `Failed to assign user roles: ${insertError.message}`,
+            variant: "destructive",
+          });
+          return;
+        }
       }
     }
 

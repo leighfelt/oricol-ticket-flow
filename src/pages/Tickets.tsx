@@ -64,6 +64,7 @@ const Tickets = () => {
   const [timeLogMinutes, setTimeLogMinutes] = useState("");
   const [timeLogNotes, setTimeLogNotes] = useState("");
   const [timeLogs, setTimeLogs] = useState<any[]>([]);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [currentUserBranch, setCurrentUserBranch] = useState("");
   const [currentUserDeviceSerial, setCurrentUserDeviceSerial] = useState("");
 
@@ -114,38 +115,20 @@ const Tickets = () => {
         }
 
         if (newProfile) {
-          // Check if this is an admin email and assign admin role via edge function
-          console.log("Checking admin status for:", user.email);
-          try {
-            const { data: adminCheckResult, error: adminCheckError } = await supabase.functions.invoke(
-              'auto-assign-admin-role'
-            );
-            
-            if (adminCheckError) {
-              console.error("Error checking admin status:", adminCheckError);
-            } else if (adminCheckResult) {
-              console.log("Admin check result:", adminCheckResult);
-              if (adminCheckResult.isAdmin && !adminCheckResult.alreadyAssigned) {
-                toast({
-                  title: "Admin Role Assigned",
-                  description: "You have been granted administrator privileges.",
-                });
-              }
-            }
-          } catch (error) {
-            console.error("Failed to auto-assign admin role:", error);
-            // Don't block user profile creation if admin check fails
-          }
-
-          // Ensure user has at least the 'user' role
-          const { data: existingUserRole } = await supabase
-            .from("user_roles")
-            .select("id")
-            .eq("user_id", userId)
-            .eq("role", "user")
-            .single();
-
-          if (!existingUserRole) {
+          // Check if this is an admin email and assign admin role if needed
+          const adminEmails = ['craig@zerobitone.co.za', 'admin@oricol.co.za', 'admin@zerobitone.co.za'];
+          if (user.email && adminEmails.includes(user.email.toLowerCase())) {
+            console.log("Auto-assigning admin role to:", user.email);
+            // Insert admin role
+            await supabase.from("user_roles").insert([
+              { user_id: userId, role: 'admin' }
+            ]);
+            // Insert user role as well
+            await supabase.from("user_roles").insert([
+              { user_id: userId, role: 'user' }
+            ]);
+          } else {
+            // Insert default user role
             await supabase.from("user_roles").insert([
               { user_id: userId, role: 'user' }
             ]);
@@ -196,7 +179,18 @@ const Tickets = () => {
     // Check if user has admin role
     const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin");
 
-    setIsAdmin(roles && roles.length > 0);
+    if (!roles || roles.length === 0) {
+      setAccessDenied(true);
+      setIsAdmin(false);
+      toast({
+        title: "Access Denied",
+        description: "Only administrators can access the Tickets Dashboard",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAdmin(true);
     fetchTickets();
   };
 
@@ -582,6 +576,27 @@ const Tickets = () => {
   const closedTickets = tickets.filter((t) => t.status === "closed");
   const resolvedTickets = tickets.filter((t) => t.status === "resolved");
   const pendingTickets = tickets.filter((t) => t.status === "pending");
+
+  if (accessDenied) {
+    return (
+      <DashboardLayout>
+        <div className="flex-1 flex items-center justify-center p-4 md:p-8">
+          <Card className="max-w-md">
+            <CardHeader>
+              <CardTitle className="text-destructive">Access Denied</CardTitle>
+              <CardDescription>You do not have permission to access the Tickets Dashboard.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Only administrators can access this page. If you believe this is an error, please contact your system
+                administrator.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
