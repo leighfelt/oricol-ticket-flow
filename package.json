@@ -19,7 +19,10 @@
     "supabase:stop": "npx supabase stop",
     "supabase:status": "npx supabase status",
     "supabase:link": "npx supabase link",
-    "detect:db": "bash scripts/detect-database.sh"
+    "supabase:reset": "npx supabase db reset",
+    "detect:db": "bash scripts/detect-database.sh",
+    "local:setup": "npx supabase start && echo '\n✅ Local Supabase is running!\n\nNext steps:\n1. Copy the anon key from above\n2. Update .env file with: VITE_SUPABASE_PUBLISHABLE_KEY=<anon-key>\n3. Run: npm run dev\n'",
+    "local:start": "npm run supabase:start && npm run dev"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
