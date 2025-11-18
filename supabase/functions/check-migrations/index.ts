@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createServiceRoleClient } from '../_shared/supabase.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,19 +12,23 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    console.log('Creating Supabase client...');
+    const supabaseClient = createServiceRoleClient();
 
     // Get list of applied migrations from the database
+    console.log('Fetching applied migrations from database...');
     const { data: appliedMigrations, error: migrationsError } = await supabaseClient
       .from('schema_migrations')
       .select('version');
 
-    if (migrationsError && migrationsError.code !== 'PGRST116') {
-      throw migrationsError;
+    if (migrationsError) {
+      console.error('Error fetching migrations:', migrationsError);
+      // PGRST116 means the table doesn't exist yet, which is okay
+      if (migrationsError.code !== 'PGRST116') {
+        throw migrationsError;
+      }
     }
+    console.log(`Found ${appliedMigrations?.length || 0} applied migrations`);
 
     const appliedVersions = new Set(
       (appliedMigrations || []).map((m: any) => m.version)
@@ -89,6 +93,9 @@ serve(async (req) => {
       "20251117102836_e9e402df-9138-41a1-874c-39dc729c3cbd.sql",
       "20251117131300_fix_shared_folders_dependencies.sql",
       "20251118031628_a1b4b539-b26d-419f-93d1-5a8e855ce824.sql",
+      "20251118063100_fix_user_groups_description_nullable.sql",
+      "20251118092000_add_file_version_history.sql",
+      "verify_admin_roles.sql",
     ];
 
     const migrations = allMigrationFiles.map((filename) => {
@@ -109,9 +116,28 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error checking migrations:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Provide detailed error information
+    let errorMessage = 'Unknown error';
+    let errorDetails = '';
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      errorDetails = error.stack || '';
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    } else if (error && typeof error === 'object') {
+      errorMessage = JSON.stringify(error);
+    }
+    
+    console.error('Error details:', { errorMessage, errorDetails });
+    
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ 
+        error: errorMessage,
+        details: errorDetails,
+        timestamp: new Date().toISOString()
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
