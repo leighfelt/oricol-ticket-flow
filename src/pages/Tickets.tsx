@@ -115,20 +115,38 @@ const Tickets = () => {
         }
 
         if (newProfile) {
-          // Check if this is an admin email and assign admin role if needed
-          const adminEmails = ['craig@zerobitone.co.za', 'admin@oricol.co.za', 'admin@zerobitone.co.za'];
-          if (user.email && adminEmails.includes(user.email.toLowerCase())) {
-            console.log("Auto-assigning admin role to:", user.email);
-            // Insert admin role
-            await supabase.from("user_roles").insert([
-              { user_id: userId, role: 'admin' }
-            ]);
-            // Insert user role as well
-            await supabase.from("user_roles").insert([
-              { user_id: userId, role: 'user' }
-            ]);
-          } else {
-            // Insert default user role
+          // Check if this is an admin email and assign admin role via edge function
+          console.log("Checking admin status for:", user.email);
+          try {
+            const { data: adminCheckResult, error: adminCheckError } = await supabase.functions.invoke(
+              'auto-assign-admin-role'
+            );
+            
+            if (adminCheckError) {
+              console.error("Error checking admin status:", adminCheckError);
+            } else if (adminCheckResult) {
+              console.log("Admin check result:", adminCheckResult);
+              if (adminCheckResult.isAdmin && !adminCheckResult.alreadyAssigned) {
+                toast({
+                  title: "Admin Role Assigned",
+                  description: "You have been granted administrator privileges.",
+                });
+              }
+            }
+          } catch (error) {
+            console.error("Failed to auto-assign admin role:", error);
+            // Don't block user profile creation if admin check fails
+          }
+
+          // Ensure user has at least the 'user' role
+          const { data: existingUserRole } = await supabase
+            .from("user_roles")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("role", "user")
+            .single();
+
+          if (!existingUserRole) {
             await supabase.from("user_roles").insert([
               { user_id: userId, role: 'user' }
             ]);

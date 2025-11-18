@@ -28,6 +28,12 @@ A modern, professional helpdesk and asset management system built with React, Ty
 
 ### 🔄 Database Migrations (Important!)
 
+**🎯 NEW: Migration Manager on Dashboard**
+- **✨ [MIGRATION_MANAGER_GUIDE.md](./MIGRATION_MANAGER_GUIDE.md)** - **Apply migrations from the dashboard (no CLI needed!)**
+- Apply pending RLS security migrations with one click
+- Fix data exposure issues through the web interface
+- Monitor migration status in real-time
+
 **Working on Lovable without CLI access? (Most users)**
 - **🔥 [QUICK_FIX_TABLE_REFS.md](./QUICK_FIX_TABLE_REFS.md)** - **Fix table errors NOW (2 min)**
 - **⭐ [LOVABLE_START_HERE.md](./LOVABLE_START_HERE.md)** - **START HERE!**
@@ -47,6 +53,7 @@ npm run migrate
 - Detection query files in `db/detection-queries/`
 
 **All Documentation**:
+- **✨ [MIGRATION_MANAGER_GUIDE.md](./MIGRATION_MANAGER_GUIDE.md)** - **Apply migrations from dashboard (NEW!)**
 - **🔥 [QUICK_FIX_TABLE_REFS.md](./QUICK_FIX_TABLE_REFS.md)** - **Fix table reference errors**
 - **[LOVABLE_START_HERE.md](./LOVABLE_START_HERE.md)** - Start here for Lovable users
 - **[LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** - Edit SQL on Lovable (no CLI)
