@@ -13,7 +13,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, CheckCircle, RotateCcw, Edit, Clock, AlertCircle, Ticket, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FaultTypeSelector } from "@/components/FaultTypeSelector";
@@ -81,10 +90,10 @@ const Tickets = () => {
       setCurrentUserEmail((data as any).email || "");
       setCurrentUserName((data as any).full_name || "");
       setCurrentUserDeviceSerial((data as any).device_serial_number || "");
-      
+
       // Auto-fill user email in ticket form
       setUserEmail((data as any).email || "");
-      
+
       // Fetch branch name if branch_id exists
       if ((data as any).branch_id) {
         const { data: branchData } = await supabase
@@ -92,13 +101,13 @@ const Tickets = () => {
           .select("name")
           .eq("id", (data as any).branch_id)
           .single();
-        
+
         if (branchData) {
           setCurrentUserBranch(branchData.name);
           setBranch(branchData.name); // Auto-fill branch in ticket form
         }
       }
-      
+
       await checkAdminRole(userId);
       checkSupportRole(userId);
     }
@@ -106,11 +115,7 @@ const Tickets = () => {
 
   const checkAdminRole = async (userId: string) => {
     // Check if user has admin role
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin");
+    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin");
 
     if (!roles || roles.length === 0) {
       setAccessDenied(true);
@@ -118,7 +123,7 @@ const Tickets = () => {
       toast({
         title: "Access Denied",
         description: "Only administrators can access the Tickets Dashboard",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -133,15 +138,12 @@ const Tickets = () => {
       .select("role")
       .eq("user_id", userId)
       .eq("role", "support_staff");
-    
+
     setIsSupportStaff(roles && roles.length > 0);
   };
 
   const fetchTickets = async () => {
-    const { data } = await supabase
-      .from("tickets")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const { data } = await supabase.from("tickets").select("*").order("created_at", { ascending: false });
 
     setTickets(data || []);
   };
@@ -163,21 +165,27 @@ const Tickets = () => {
     // Auto-assign to current user if they're support staff
     const assignedTo = isSupportStaff ? currentUserId : null;
 
-    const { data: ticketData, error } = await supabase.from("tickets").insert([{
-      title,
-      description,
-      priority: priority as any,
-      category: category || null,
-      branch: branch || null,
-      fault_type: faultType || null,
-      user_email: userEmail || null,
-      error_code: errorCode || null,
-      device_serial_number: currentUserDeviceSerial || null,
-      created_by: currentUserId,
-      assigned_to: assignedTo,
-      status: "open" as any,
-      last_activity_at: new Date().toISOString(),
-    }]).select().single();
+    const { data: ticketData, error } = await supabase
+      .from("tickets")
+      .insert([
+        {
+          title,
+          description,
+          priority: priority as any,
+          category: category || null,
+          branch: branch || null,
+          fault_type: faultType || null,
+          user_email: userEmail || null,
+          error_code: errorCode || null,
+          device_serial_number: currentUserDeviceSerial || null,
+          created_by: currentUserId,
+          assigned_to: assignedTo,
+          status: "open" as any,
+          last_activity_at: new Date().toISOString(),
+        },
+      ])
+      .select()
+      .single();
 
     if (error) {
       toast({
@@ -233,11 +241,11 @@ const Tickets = () => {
 
     toast({
       title: "Success",
-      description: isSupportStaff 
-        ? "Ticket created and assigned to you. Email notification sent." 
+      description: isSupportStaff
+        ? "Ticket created and assigned to you. Email notification sent."
         : "Ticket created successfully",
     });
-    
+
     setOpen(false);
     setTitle("");
     setDescription("");
@@ -341,14 +349,12 @@ const Tickets = () => {
       return;
     }
 
-    const { error } = await supabase
-      .from("ticket_time_logs")
-      .insert({
-        ticket_id: selectedTicket.id,
-        user_id: currentUserId,
-        minutes,
-        notes: timeLogNotes || null,
-      });
+    const { error } = await supabase.from("ticket_time_logs").insert({
+      ticket_id: selectedTicket.id,
+      user_id: currentUserId,
+      minutes,
+      notes: timeLogNotes || null,
+    });
 
     if (error) {
       toast({
@@ -361,10 +367,7 @@ const Tickets = () => {
 
     // Update ticket's total time
     const newTotalTime = (selectedTicket.time_spent_minutes || 0) + minutes;
-    await supabase
-      .from("tickets")
-      .update({ time_spent_minutes: newTotalTime })
-      .eq("id", selectedTicket.id);
+    await supabase.from("tickets").update({ time_spent_minutes: newTotalTime }).eq("id", selectedTicket.id);
 
     toast({
       title: "Success",
@@ -376,7 +379,7 @@ const Tickets = () => {
     setTimeLogNotes("");
     fetchTimeLogs(selectedTicket.id);
     fetchTickets();
-    
+
     // Update selected ticket
     const updatedTicket = { ...selectedTicket, time_spent_minutes: newTotalTime };
     setSelectedTicket(updatedTicket);
@@ -430,10 +433,7 @@ const Tickets = () => {
       updates.resolved_at = null;
     }
 
-    const { error } = await supabase
-      .from("tickets")
-      .update(updates)
-      .eq("id", selectedTicket.id);
+    const { error } = await supabase.from("tickets").update(updates).eq("id", selectedTicket.id);
 
     if (error) {
       toast({
@@ -456,10 +456,7 @@ const Tickets = () => {
   const handleDeleteTicket = async () => {
     if (!ticketToDelete) return;
 
-    const { error } = await supabase
-      .from("tickets")
-      .delete()
-      .eq("id", ticketToDelete);
+    const { error } = await supabase.from("tickets").delete().eq("id", ticketToDelete);
 
     if (error) {
       toast({
@@ -487,11 +484,7 @@ const Tickets = () => {
       closed: "bg-status-closed",
     };
 
-    return (
-      <Badge className={`${colors[status]} text-white`}>
-        {status.replace("_", " ")}
-      </Badge>
-    );
+    return <Badge className={`${colors[status]} text-white`}>{status.replace("_", " ")}</Badge>;
   };
 
   const getPriorityBadge = (priority: string) => {
@@ -509,10 +502,10 @@ const Tickets = () => {
     );
   };
 
-  const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'in_progress');
-  const closedTickets = tickets.filter(t => t.status === 'closed');
-  const resolvedTickets = tickets.filter(t => t.status === 'resolved');
-  const pendingTickets = tickets.filter(t => t.status === 'pending');
+  const openTickets = tickets.filter((t) => t.status === "open" || t.status === "in_progress");
+  const closedTickets = tickets.filter((t) => t.status === "closed");
+  const resolvedTickets = tickets.filter((t) => t.status === "resolved");
+  const pendingTickets = tickets.filter((t) => t.status === "pending");
 
   if (accessDenied) {
     return (
@@ -521,14 +514,12 @@ const Tickets = () => {
           <Card className="max-w-md">
             <CardHeader>
               <CardTitle className="text-destructive">Access Denied</CardTitle>
-              <CardDescription>
-                You do not have permission to access the Tickets Dashboard.
-              </CardDescription>
+              <CardDescription>You do not have permission to access the Tickets Dashboard.</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Only administrators can access this page. If you believe this is an error, 
-                please contact your system administrator.
+                Only administrators can access this page. If you believe this is an error, please contact your system
+                administrator.
               </p>
             </CardContent>
           </Card>
@@ -562,108 +553,104 @@ const Tickets = () => {
                   New Ticket
                 </Button>
               </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Create New Ticket</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="userEmail">Your Email</Label>
-                  <Input
-                    id="userEmail"
-                    type="email"
-                    value={userEmail}
-                    onChange={(e) => setUserEmail(e.target.value)}
-                    placeholder="your.email@oricol.co.za"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="branch">Branch</Label>
-                  <Select value={branch} onValueChange={setBranch} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select branch" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="DBN">Durban (DBN)</SelectItem>
-                      <SelectItem value="CPT">Cape Town (CPT)</SelectItem>
-                      <SelectItem value="PE">Port Elizabeth (PE)</SelectItem>
-                      <SelectItem value="JHB">Johannesburg (JHB)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Create New Ticket</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="userEmail">Your Email</Label>
+                    <Input
+                      id="userEmail"
+                      type="email"
+                      value={userEmail}
+                      onChange={(e) => setUserEmail(e.target.value)}
+                      placeholder="your.email@oricol.co.za"
+                      required
+                    />
+                  </div>
 
-                <FaultTypeSelector 
-                  value={faultType} 
-                  onChange={setFaultType} 
-                  required 
-                />
+                  <div className="space-y-2">
+                    <Label htmlFor="branch">Branch</Label>
+                    <Select value={branch} onValueChange={setBranch} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select branch" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="DBN">Durban (DBN)</SelectItem>
+                        <SelectItem value="CPT">Cape Town (CPT)</SelectItem>
+                        <SelectItem value="PE">Port Elizabeth (PE)</SelectItem>
+                        <SelectItem value="JHB">Johannesburg (JHB)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="title">Fault Title</Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Brief description of the issue"
-                    required
-                  />
-                </div>
+                  <FaultTypeSelector value={faultType} onChange={setFaultType} required />
 
-                <div className="space-y-2">
-                  <Label htmlFor="description">Fault Description / Error Message</Label>
-                  <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe the issue in detail or paste any error messages"
-                    rows={4}
-                    required
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Fault Title</Label>
+                    <Input
+                      id="title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Brief description of the issue"
+                      required
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="errorCode">Error Code (Optional)</Label>
-                  <Input
-                    id="errorCode"
-                    value={errorCode}
-                    onChange={(e) => setErrorCode(e.target.value)}
-                    placeholder="e.g., 0x80070005"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category (Optional)</Label>
-                  <Input
-                    id="category"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    placeholder="e.g., Hardware, Software, Network"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Fault Description / Error Message</Label>
+                    <Textarea
+                      id="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Describe the issue in detail or paste any error messages"
+                      rows={4}
+                      required
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="priority">Priority</Label>
-                  <Select value={priority} onValueChange={setPriority}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="errorCode">Error Code (Optional)</Label>
+                    <Input
+                      id="errorCode"
+                      value={errorCode}
+                      onChange={(e) => setErrorCode(e.target.value)}
+                      placeholder="e.g., 0x80070005"
+                    />
+                  </div>
 
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Creating..." : "Create Ticket"}
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category (Optional)</Label>
+                    <Input
+                      id="category"
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      placeholder="e.g., Hardware, Software, Network"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="priority">Priority</Label>
+                    <Select value={priority} onValueChange={setPriority}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="urgent">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? "Creating..." : "Create Ticket"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -717,18 +704,10 @@ const Tickets = () => {
         {/* Tabbed View */}
         <Tabs defaultValue="open" className="space-y-4">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="open">
-              Open ({openTickets.length})
-            </TabsTrigger>
-            <TabsTrigger value="pending">
-              Pending ({pendingTickets.length})
-            </TabsTrigger>
-            <TabsTrigger value="resolved">
-              Resolved ({resolvedTickets.length})
-            </TabsTrigger>
-            <TabsTrigger value="closed">
-              Closed ({closedTickets.length})
-            </TabsTrigger>
+            <TabsTrigger value="open">Open ({openTickets.length})</TabsTrigger>
+            <TabsTrigger value="pending">Pending ({pendingTickets.length})</TabsTrigger>
+            <TabsTrigger value="resolved">Resolved ({resolvedTickets.length})</TabsTrigger>
+            <TabsTrigger value="closed">Closed ({closedTickets.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="open">
@@ -758,17 +737,16 @@ const Tickets = () => {
                               </Badge>
                             )}
                             {ticket.fault_type && (
-                              <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                              <Badge
+                                variant="outline"
+                                className="bg-orange-500/10 text-orange-600 border-orange-500/20"
+                              >
                                 🔧 {ticket.fault_type}
                               </Badge>
                             )}
-                            {ticket.category && (
-                              <Badge variant="secondary">{ticket.category}</Badge>
-                            )}
+                            {ticket.category && <Badge variant="secondary">{ticket.category}</Badge>}
                             {ticket.user_email && (
-                              <span className="text-xs text-muted-foreground">
-                                👤 {ticket.user_email}
-                              </span>
+                              <span className="text-xs text-muted-foreground">👤 {ticket.user_email}</span>
                             )}
                             <span className="text-xs text-muted-foreground">
                               📅 {new Date(ticket.created_at).toLocaleDateString()}
@@ -814,7 +792,10 @@ const Tickets = () => {
                               </Badge>
                             )}
                             {ticket.fault_type && (
-                              <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                              <Badge
+                                variant="outline"
+                                className="bg-orange-500/10 text-orange-600 border-orange-500/20"
+                              >
                                 🔧 {ticket.fault_type}
                               </Badge>
                             )}
@@ -954,9 +935,7 @@ const Tickets = () => {
                       </Button>
                     )}
                   </SheetTitle>
-                  <SheetDescription>
-                    Ticket #{selectedTicket.id.slice(0, 8)}
-                  </SheetDescription>
+                  <SheetDescription>Ticket #{selectedTicket.id.slice(0, 8)}</SheetDescription>
                 </SheetHeader>
 
                 <div className="space-y-6 mt-6">
@@ -1061,9 +1040,7 @@ const Tickets = () => {
                                           {new Date(log.logged_at).toLocaleDateString()}
                                         </span>
                                       </div>
-                                      {log.notes && (
-                                        <p className="text-sm text-muted-foreground mt-1">{log.notes}</p>
-                                      )}
+                                      {log.notes && <p className="text-sm text-muted-foreground mt-1">{log.notes}</p>}
                                     </div>
                                   ))}
                                 </div>
@@ -1082,7 +1059,11 @@ const Tickets = () => {
                             Reopen Ticket
                           </Button>
                         ) : (
-                          <Button onClick={() => handleCloseTicket(selectedTicket.id)} variant="outline" className="flex-1">
+                          <Button
+                            onClick={() => handleCloseTicket(selectedTicket.id)}
+                            variant="outline"
+                            className="flex-1"
+                          >
                             <CheckCircle className="h-4 w-4 mr-2" />
                             Close Ticket
                           </Button>
@@ -1138,11 +1119,7 @@ const Tickets = () => {
 
                         <div className="space-y-2">
                           <Label htmlFor="editTitle">Title</Label>
-                          <Input
-                            id="editTitle"
-                            value={editTitle}
-                            onChange={(e) => setEditTitle(e.target.value)}
-                          />
+                          <Input id="editTitle" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
                         </div>
 
                         <div className="space-y-2">
