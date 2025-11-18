@@ -4,6 +4,21 @@ A modern, professional helpdesk and asset management system built with React, Ty
 
 ![Oricol Helpdesk](https://github.com/user-attachments/assets/43b833f0-e11c-4776-a0ad-cba268f6aa18)
 
+---
+
+## ⚡ **NEW: Local-First Development!**
+
+This app now runs **100% locally** by default - no cloud setup required!
+
+✅ Zero configuration needed  
+✅ One command to start  
+✅ No cloud costs  
+✅ Complete privacy  
+
+📖 **Migrating from cloud?** See [LOCAL_SETUP_MIGRATION.md](./LOCAL_SETUP_MIGRATION.md)
+
+---
+
 ## 🚀 Quick Start - Local Development (Recommended)
 
 **Run the entire app on your computer in 5 minutes - no cloud services needed!**
