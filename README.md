@@ -10,6 +10,7 @@ A modern, professional helpdesk and asset management system built with React, Ty
 
 ### 🎯 New to Lovable? Start Here!
 - **⭐ [LOVABLE_START_HERE.md](./LOVABLE_START_HERE.md)** - **Complete guide for Lovable users**
+- **⭐ [QUICK_FIX_TABLE_REFS.md](./QUICK_FIX_TABLE_REFS.md)** - **🔥 Fix table reference errors (2 min)**
 - **⭐ [LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** - **How to edit SQL without CLI**
 - **⭐ [LOVABLE_SQL_CHEATSHEET.md](./LOVABLE_SQL_CHEATSHEET.md)** - **Quick reference**
 - **⭐ [LOVABLE_SQL_FAQ.md](./LOVABLE_SQL_FAQ.md)** - **Frequently asked questions**
@@ -28,6 +29,7 @@ A modern, professional helpdesk and asset management system built with React, Ty
 ### 🔄 Database Migrations (Important!)
 
 **Working on Lovable without CLI access? (Most users)**
+- **🔥 [QUICK_FIX_TABLE_REFS.md](./QUICK_FIX_TABLE_REFS.md)** - **Fix table errors NOW (2 min)**
 - **⭐ [LOVABLE_START_HERE.md](./LOVABLE_START_HERE.md)** - **START HERE!**
 - **⭐ [LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** - **Complete guide (no CLI needed)**
 - **⭐ [LOVABLE_SQL_CHEATSHEET.md](./LOVABLE_SQL_CHEATSHEET.md)** - **Quick reference**
@@ -45,6 +47,7 @@ npm run migrate
 - Detection query files in `db/detection-queries/`
 
 **All Documentation**:
+- **🔥 [QUICK_FIX_TABLE_REFS.md](./QUICK_FIX_TABLE_REFS.md)** - **Fix table reference errors**
 - **[LOVABLE_START_HERE.md](./LOVABLE_START_HERE.md)** - Start here for Lovable users
 - **[LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** - Edit SQL on Lovable (no CLI)
 - **[LOVABLE_SQL_CHEATSHEET.md](./LOVABLE_SQL_CHEATSHEET.md)** - Quick reference cheat sheet
@@ -55,7 +58,7 @@ npm run migrate
 - **[SUPABASE_MIGRATIONS.md](./SUPABASE_MIGRATIONS.md)** - Complete migration guide
 
 ### Additional Setup Options:
-- **Local Development** (optional) - See [LOCAL_SETUP.md](./LOCAL_SETUP.md)
+- **🚀 [LOCAL_SETUP.md](./LOCAL_SETUP.md)** - **Run 100% locally (no cloud, no Lovable)**
 - **Alternative Deployment** (optional) - See [DEPLOYMENT.md](./DEPLOYMENT.md)
 - **Quick Reference** - See [QUICKSTART.md](./QUICKSTART.md)
 
