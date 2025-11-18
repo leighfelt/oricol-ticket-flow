@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { CopilotPrompt } from "@/components/CopilotPrompt";
+import { MigrationManager } from "@/components/MigrationManager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ticket, Package, AlertCircle, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -152,6 +153,9 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
+            {/* Migration Manager */}
+            <MigrationManager />
+
             <Card>
               <CardHeader>
                 <CardTitle>Recent Tickets</CardTitle>
