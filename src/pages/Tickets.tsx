@@ -72,7 +72,7 @@ const Tickets = () => {
   const fetchUserProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("id, email, full_name, user_id" as any)
+      .select("id, email, full_name, user_id, device_serial_number, branch_id" as any)
       .eq("user_id", userId)
       .single();
 
