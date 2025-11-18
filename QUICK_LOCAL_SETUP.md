@@ -13,6 +13,23 @@ That's it! Everything else will be installed automatically.
 
 ## Setup Steps
 
+### Option A: Automated Setup (Easiest)
+
+```bash
+git clone https://github.com/craigfelt/oricol-ticket-flow-34e64301.git
+cd oricol-ticket-flow-34e64301
+npm install
+./start-local.sh
+```
+
+That's it! The script will:
+- ✅ Check all prerequisites
+- ✅ Start Supabase automatically
+- ✅ Launch the app
+- ✅ Show you all the URLs
+
+### Option B: Manual Setup
+
 ### 1. Clone and Install
 
 ```bash

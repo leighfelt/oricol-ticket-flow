@@ -12,7 +12,32 @@ A modern, professional helpdesk and asset management system built with React, Ty
 - [Docker Desktop](https://www.docker.com/products/docker-desktop) (required for local Supabase)
 - [Node.js 18+](https://nodejs.org/) (install with [nvm](https://github.com/nvm-sh/nvm))
 
-### Setup in 4 Steps
+### Automated Setup (Easiest!)
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/craigfelt/oricol-ticket-flow-34e64301.git
+cd oricol-ticket-flow-34e64301
+
+# 2. Install dependencies
+npm install
+
+# 3. Run the automated setup script
+./start-local.sh
+```
+
+**That's it!** The script will:
+- ✅ Check all prerequisites
+- ✅ Start local Supabase automatically
+- ✅ Launch the app at http://localhost:8080
+- ✅ Show you all service URLs
+
+Or use npm:
+```bash
+npm start
+```
+
+### Manual Setup (If you prefer step-by-step)
 
 ```bash
 # 1. Clone and install dependencies
@@ -27,7 +52,7 @@ npm run supabase:start
 npm run dev
 ```
 
-**That's it!** The app is now running at **http://localhost:8080**
+**App is now running at http://localhost:8080**
 
 📖 **See [QUICK_LOCAL_SETUP.md](./QUICK_LOCAL_SETUP.md) for detailed setup instructions**
 
