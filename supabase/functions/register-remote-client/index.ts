@@ -28,16 +28,41 @@ Deno.serve(async (req) => {
 
       console.log('Registering client:', clientData);
 
+      // Validate required fields
+      if (!clientData.registration_token || !clientData.computer_name || !clientData.username) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required fields: registration_token, computer_name, and username are required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Validate registration token format (basic sanitization)
+      if (typeof clientData.registration_token !== 'string' || clientData.registration_token.length < 10 || clientData.registration_token.length > 200) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid registration token format' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Sanitize string inputs to prevent injection
+      const sanitizedData = {
+        registration_token: clientData.registration_token.trim(),
+        computer_name: clientData.computer_name.trim().substring(0, 255),
+        username: clientData.username.trim().substring(0, 255),
+        os_version: clientData.os_version?.trim().substring(0, 255),
+        ip_address: clientData.ip_address?.trim().substring(0, 45), // Max IPv6 length
+      };
+
       // Insert or update client registration
       const { data, error } = await supabase
         .from('remote_clients')
         .upsert(
           {
-            registration_token: clientData.registration_token,
-            computer_name: clientData.computer_name,
-            username: clientData.username,
-            os_version: clientData.os_version,
-            ip_address: clientData.ip_address,
+            registration_token: sanitizedData.registration_token,
+            computer_name: sanitizedData.computer_name,
+            username: sanitizedData.username,
+            os_version: sanitizedData.os_version,
+            ip_address: sanitizedData.ip_address,
             last_seen_at: new Date().toISOString(),
             status: 'online',
           },
@@ -65,6 +90,14 @@ Deno.serve(async (req) => {
     if (req.method === 'PUT') {
       // Heartbeat update
       const { registration_token } = await req.json();
+
+      // Validate registration token
+      if (!registration_token || typeof registration_token !== 'string') {
+        return new Response(
+          JSON.stringify({ error: 'Invalid or missing registration_token' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       const { data, error } = await supabase
         .from('remote_clients')

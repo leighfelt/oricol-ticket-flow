@@ -35,6 +35,21 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Validate token format and length
+    if (typeof token !== 'string' || token.length < 10 || token.length > 200) {
+      return new Response(
+        JSON.stringify({ error: "Invalid confirmation token format" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Sanitize optional string inputs
+    const sanitizedProviderName = providerName?.trim().substring(0, 255);
+    const sanitizedNotes = notes?.trim().substring(0, 1000);
+
     console.log("Processing confirmation for token:", token);
 
     // Find the email log by token
@@ -77,8 +92,8 @@ const handler = async (req: Request): Promise<Response> => {
       .from("provider_emails")
       .update({
         confirmed_at: new Date().toISOString(),
-        confirmed_by: providerName || emailLog.provider,
-        provider_notes: notes,
+        confirmed_by: sanitizedProviderName || emailLog.provider,
+        provider_notes: sanitizedNotes,
       })
       .eq("id", emailLog.id);
 
