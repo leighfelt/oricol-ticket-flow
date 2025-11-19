@@ -17,7 +17,8 @@ import {
   Mail,
   MapPin,
   DollarSign,
-  Activity
+  Activity,
+  AlertTriangle
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import oricolLogo from "@/assets/oricol-logo.png";
 
 interface Company {
@@ -110,6 +112,7 @@ const CRM = () => {
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [isAddDealOpen, setIsAddDealOpen] = useState(false);
   const [isAddActivityOpen, setIsAddActivityOpen] = useState(false);
+  const [setupRequired, setSetupRequired] = useState(false);
   
   // Form states
   const [newCompany, setNewCompany] = useState({
@@ -243,13 +246,29 @@ const CRM = () => {
         activeDeals: activeDealsCount || 0,
         revenueOpportunity: totalValue,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching CRM data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load CRM data",
-        variant: "destructive",
-      });
+      
+      // Check if the error is due to missing tables
+      const errorMessage = error?.message || '';
+      const isTableMissing = errorMessage.includes('does not exist') || 
+                            errorMessage.includes('relation') && errorMessage.includes('crm_');
+      
+      if (isTableMissing) {
+        setSetupRequired(true);
+        toast({
+          title: "CRM Setup Required",
+          description: "The CRM database tables need to be created. See CRM_SETUP_GUIDE.md in the repository for instructions.",
+          variant: "destructive",
+          duration: 10000,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to load CRM data. Please check your permissions and try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -472,6 +491,41 @@ const CRM = () => {
             </p>
           </div>
         </div>
+
+        {/* Setup Required Alert */}
+        {setupRequired && (
+          <Alert variant="destructive" className="relative z-10">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>CRM Setup Required</AlertTitle>
+            <AlertDescription className="mt-2 space-y-2">
+              <p>
+                The CRM database tables haven't been created yet. To use the CRM system, you need to apply the database migration.
+              </p>
+              <div className="mt-3">
+                <p className="font-semibold">For Lovable Users (No CLI):</p>
+                <ol className="list-decimal list-inside ml-2 mt-1 space-y-1 text-sm">
+                  <li>Open Supabase SQL Editor at <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="underline">supabase.com</a></li>
+                  <li>Copy the SQL from <code className="bg-muted px-1 py-0.5 rounded">supabase/migrations/20251119080900_create_crm_system.sql</code></li>
+                  <li>Paste and run it in the SQL Editor</li>
+                </ol>
+              </div>
+              <div className="mt-3">
+                <p className="font-semibold">For CLI Users:</p>
+                <p className="text-sm ml-2 mt-1">Run <code className="bg-muted px-1 py-0.5 rounded">npm run migrate</code> in your terminal</p>
+              </div>
+              <p className="mt-3 text-sm">
+                For detailed instructions, see <a 
+                  href="https://github.com/craigfelt/oricol-ticket-flow-4084ab4c/blob/main/CRM_SETUP_GUIDE.md" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="underline font-semibold"
+                >
+                  CRM_SETUP_GUIDE.md
+                </a> in the repository.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 w-full relative z-10">

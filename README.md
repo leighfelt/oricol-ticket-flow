@@ -90,6 +90,14 @@ npm run migrate
 - **Network diagram image uploads**
 - See [DOCUMENT_IMPORT.md](./DOCUMENT_IMPORT.md) for detailed instructions
 
+### 🏢 CRM (Customer Relationship Management)
+- Manage companies and organizations
+- Track contacts and their relationships
+- Sales pipeline and deal management
+- Activity logging (calls, emails, meetings, tasks)
+- Admin-only access
+- **⚠️ First-time setup required** - See [CRM_SETUP_GUIDE.md](./CRM_SETUP_GUIDE.md)
+
 ### 🎨 User Interface
 - Modern, responsive design
 - Mobile-friendly with hamburger menu
@@ -220,6 +228,12 @@ If you need to create an admin account or have lost access to your admin account
 If you can see tabs but get "Access Denied" when clicking them:
 - **Quick Fix:** See **[QUICK_FIX_ACCESS_DENIED.md](./QUICK_FIX_ACCESS_DENIED.md)** for instant solution
 - **Detailed Guide:** See **[FIXING_ACCESS_DENIED.md](./FIXING_ACCESS_DENIED.md)** for comprehensive troubleshooting
+
+### Troubleshooting CRM Errors
+If you see "Failed to load CRM data" error:
+- **⚡ SOLUTION:** See **[CRM_SETUP_GUIDE.md](./CRM_SETUP_GUIDE.md)** for setup instructions
+- The CRM database tables need to be created first (one-time setup)
+- Works for both CLI and Lovable users
 
 ### Troubleshooting Storage and RLS Errors
 If you encounter storage-related errors when uploading files:
