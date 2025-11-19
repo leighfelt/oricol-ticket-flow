@@ -22,7 +22,8 @@ import {
   FileText,
   FolderOpen,
   Settings,
-  FolderTree
+  FolderTree,
+  TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -97,6 +98,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const allNavigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, requiredRoles: [] }, // Everyone
     { name: "Tickets", href: "/tickets", icon: Ticket, requiredRoles: ['admin'] }, // Admin only
+    { name: "Oricol CRM", href: "/crm", icon: TrendingUp, requiredRoles: ['admin'] }, // Admin only
     { name: "Remote Support", href: "/remote-support", icon: Video, requiredRoles: [] }, // Everyone
     { name: "Document Hub", href: "/document-hub", icon: FolderOpen, requiredRoles: ['admin'] }, // Admin only
     { name: "Shared Files", href: "/shared-files", icon: FolderTree, requiredRoles: ['admin'] }, // Admin only
