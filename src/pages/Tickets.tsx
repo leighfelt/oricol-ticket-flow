@@ -78,41 +78,94 @@ const Tickets = () => {
   }, [navigate]);
 
   const fetchUserProfile = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("id, email, full_name, user_id, device_serial_number, branch_id" as any)
       .eq("user_id", userId)
       .single();
 
-    if (data) {
-      // Use user_id (auth user UUID) instead of profile id
-      setCurrentUserId(userId);
-      setCurrentUserEmail((data as any).email || "");
-      setCurrentUserName((data as any).full_name || "");
-      setCurrentUserDeviceSerial((data as any).device_serial_number || "");
-
-      // Auto-fill user email in ticket form
-      setUserEmail((data as any).email || "");
-
-      // Fetch branch name if branch_id exists
-      if ((data as any).branch_id) {
-        const { data: branchData } = await supabase
-          .from("branches")
-          .select("name")
-          .eq("id", (data as any).branch_id)
+    // If profile doesn't exist, try to create it
+    if (error && error.code === 'PGRST116') {
+      console.log("Profile not found, creating profile for user:", userId);
+      
+      // Get user details from auth
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert({
+            user_id: userId,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || "",
+          });
+        
+        if (insertError) {
+          console.error("Error creating profile:", insertError);
+          toast({
+            title: "Profile Error",
+            description: "Unable to create user profile. Please contact support.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Retry fetching the profile
+        const { data: newData } = await supabase
+          .from("profiles")
+          .select("id, email, full_name, user_id, device_serial_number, branch_id" as any)
+          .eq("user_id", userId)
           .single();
-
-        if (branchData) {
-          setCurrentUserBranch(branchData.name);
-          setBranch(branchData.name); // Auto-fill branch in ticket form
+        
+        if (newData) {
+          toast({
+            title: "Profile Created",
+            description: "Your profile has been set up successfully.",
+          });
+          // Continue with the profile setup below
+          setupProfile(newData, userId);
         }
       }
-
-      await checkAdminRole(userId);
-      await checkSupportRole(userId);
-      // Fetch tickets for all authenticated users (RLS will filter appropriately)
-      fetchTickets();
+    } else if (data) {
+      setupProfile(data, userId);
+    } else if (error) {
+      console.error("Error fetching profile:", error);
+      toast({
+        title: "Error",
+        description: "Unable to load user profile. Please try refreshing the page.",
+        variant: "destructive",
+      });
     }
+  };
+
+  const setupProfile = async (data: any, userId: string) => {
+    // Use user_id (auth user UUID) instead of profile id
+    setCurrentUserId(userId);
+    setCurrentUserEmail(data.email || "");
+    setCurrentUserName(data.full_name || "");
+    setCurrentUserDeviceSerial(data.device_serial_number || "");
+
+    // Auto-fill user email in ticket form
+    setUserEmail(data.email || "");
+
+    // Fetch branch name if branch_id exists
+    if (data.branch_id) {
+      const { data: branchData } = await supabase
+        .from("branches")
+        .select("name")
+        .eq("id", data.branch_id)
+        .single();
+
+      if (branchData) {
+        setCurrentUserBranch(branchData.name);
+        setBranch(branchData.name); // Auto-fill branch in ticket form
+      }
+    }
+
+    await checkAdminRole(userId);
+    await checkSupportRole(userId);
+    // Fetch tickets for all authenticated users (RLS will filter appropriately)
+    fetchTickets();
   };
 
   const checkAdminRole = async (userId: string) => {
