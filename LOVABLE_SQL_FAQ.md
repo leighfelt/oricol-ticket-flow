@@ -365,6 +365,7 @@ See migration files for more examples.
 
 ## 📚 Quick Links
 
+- **[LOVABLE_MIGRATION_GUIDE.md](./LOVABLE_MIGRATION_GUIDE.md)** - Run migrations on Lovable (copy & overwrite)
 - **[LOVABLE_START_HERE.md](./LOVABLE_START_HERE.md)** - Start here!
 - **[LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** - Complete guide
 - **[LOVABLE_SQL_CHEATSHEET.md](./LOVABLE_SQL_CHEATSHEET.md)** - Quick reference

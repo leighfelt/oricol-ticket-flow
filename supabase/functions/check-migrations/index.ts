@@ -106,6 +106,12 @@ serve(async (req) => {
       "20251117102836_e9e402df-9138-41a1-874c-39dc729c3cbd.sql",
       "20251117131300_fix_shared_folders_dependencies.sql",
       "20251118031628_a1b4b539-b26d-419f-93d1-5a8e855ce824.sql",
+      "20251119034817_f3a7a9e8-59e4-44e1-855e-a349b498bdb2.sql",
+      "20251119050102_87ec93cb-5d13-4ff1-bc63-02721e798d75.sql",
+      "20251119052800_fix_security_definer_search_path.sql",
+      "20251119055823_backfill_missing_profiles.sql",
+      "20251119080900_create_crm_system.sql",
+      "verify_admin_roles.sql",
     ];
 
     const migrations = allMigrationFiles.map((filename) => {

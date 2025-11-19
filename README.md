@@ -23,6 +23,7 @@ A modern, professional helpdesk and asset management system built with React, Ty
 ### 🔄 Database Migrations (Important!)
 
 **Working on Lovable without CLI access? (Most users)**
+- **⭐ [LOVABLE_MIGRATION_GUIDE.md](./LOVABLE_MIGRATION_GUIDE.md)** - **How to run migrations on Lovable (copy & overwrite)**
 - **⭐ [LOVABLE_START_HERE.md](./LOVABLE_START_HERE.md)** - **START HERE!**
 - **⭐ [LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** - **Complete guide (no CLI needed)**
 - **⭐ [LOVABLE_SQL_CHEATSHEET.md](./LOVABLE_SQL_CHEATSHEET.md)** - **Quick reference**
@@ -40,6 +41,7 @@ npm run migrate
 - Detection query files in `db/detection-queries/`
 
 **All Documentation**:
+- **[LOVABLE_MIGRATION_GUIDE.md](./LOVABLE_MIGRATION_GUIDE.md)** - Run migrations on Lovable (copy & overwrite method)
 - **[LOVABLE_START_HERE.md](./LOVABLE_START_HERE.md)** - Start here for Lovable users
 - **[LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** - Edit SQL on Lovable (no CLI)
 - **[LOVABLE_SQL_CHEATSHEET.md](./LOVABLE_SQL_CHEATSHEET.md)** - Quick reference cheat sheet

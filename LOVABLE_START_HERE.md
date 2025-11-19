@@ -6,6 +6,11 @@ Welcome! This guide helps you work with database (SQL) changes on **Lovable** wh
 
 ## 📌 Quick Links
 
+### Need to Run Migrations?
+**→ [HOW_TO_RUN_MIGRATIONS_ON_LOVABLE.md](./HOW_TO_RUN_MIGRATIONS_ON_LOVABLE.md)** - ⚡ Quick answer: what file to overwrite
+
+**→ [LOVABLE_MIGRATION_GUIDE.md](./LOVABLE_MIGRATION_GUIDE.md)** - Complete migration guide (copy & overwrite method)
+
 ### Need to Edit SQL?
 **→ [LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** - Complete guide for editing SQL without CLI
 

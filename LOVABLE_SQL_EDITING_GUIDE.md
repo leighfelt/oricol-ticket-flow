@@ -423,6 +423,7 @@ Format SQL:                  Shift+Alt+F
 
 ## 📚 Related Documentation
 
+- **LOVABLE_MIGRATION_GUIDE.md** - **How to run migrations on Lovable (copy & overwrite method)**
 - **FIND_YOUR_SUPABASE_CONNECTION.md** - How to find and access your Supabase project
 - **MIGRATION_QUICKSTART.md** - Quick guide for running migrations with CLI
 - **SUPABASE_MIGRATIONS.md** - Complete migration guide (CLI-focused)
