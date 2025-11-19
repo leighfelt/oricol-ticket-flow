@@ -15,6 +15,7 @@ interface MigrationStatus {
 
 // List of all migration files (this should match what's in supabase/migrations/)
 const ALL_MIGRATION_FILES = [
+  "20251100000000_create_schema_migrations_table.sql", // Must be run FIRST
   "20251108052000_bee9ee20-5a81-402a-bdd9-30cce8e8ecb7.sql",
   "20251109045855_6a7fc76b-c088-4052-a67d-5471bc1cf984.sql",
   "20251110192108_fab519ce-aecd-4771-8ff3-cb79de2cbe7d.sql",
@@ -87,6 +88,7 @@ export const SimpleMigrationManager = () => {
   const [migrations, setMigrations] = useState<MigrationStatus[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedMigration, setSelectedMigration] = useState<string | null>(null);
+  const [isFirstTimeSetup, setIsFirstTimeSetup] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -97,14 +99,20 @@ export const SimpleMigrationManager = () => {
     setLoading(true);
     try {
       // First, ensure the schema_migrations table exists
-      const { error: tableCheckError } = await supabase
+      const { data: tableCheckData, error: tableCheckError } = await supabase
         .from('schema_migrations')
         .select('version')
         .limit(1);
 
       // If table doesn't exist, show all as pending
-      if (tableCheckError && tableCheckError.code === 'PGRST116') {
+      // PostgREST returns different error codes depending on the situation:
+      // - PGRST116: relation does not exist (when using PostgREST)
+      // - 42P01: undefined_table (PostgreSQL error code)
+      // - Or the error might be null but data is also null (404 case)
+      if (tableCheckError || (tableCheckData === null && tableCheckError === null)) {
         console.log('schema_migrations table does not exist - all migrations pending');
+        console.log('Table check error:', tableCheckError);
+        setIsFirstTimeSetup(true);
         const allPending = ALL_MIGRATION_FILES.map(filename => ({
           filename,
           applied: false,
@@ -114,6 +122,9 @@ export const SimpleMigrationManager = () => {
         setLoading(false);
         return;
       }
+
+      // Table exists, so this is not first time setup
+      setIsFirstTimeSetup(false);
 
       // Get list of applied migrations
       const { data: appliedMigrations, error } = await supabase
@@ -220,7 +231,54 @@ export const SimpleMigrationManager = () => {
         </div>
 
         {/* Instructions Alert */}
-        {pendingCount > 0 && (
+        {isFirstTimeSetup && (
+          <Alert className="bg-blue-50 border-blue-200">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription>
+              <div className="space-y-3">
+                <p className="font-semibold text-blue-900">
+                  🚀 First-Time Setup Required
+                </p>
+                <p className="text-sm text-blue-800">
+                  The migration tracking table needs to be created before you can apply migrations.
+                </p>
+                <div className="bg-black/5 p-3 rounded text-xs font-mono overflow-x-auto">
+                  CREATE TABLE IF NOT EXISTS schema_migrations (<br/>
+                  &nbsp;&nbsp;version text PRIMARY KEY,<br/>
+                  &nbsp;&nbsp;applied_at timestamptz DEFAULT now()<br/>
+                  );
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard(
+                      `CREATE TABLE IF NOT EXISTS schema_migrations (\n  version text PRIMARY KEY,\n  applied_at timestamptz DEFAULT now()\n);`,
+                      "Create table SQL"
+                    )}
+                    className="gap-2"
+                  >
+                    <Copy className="h-3 w-3" />
+                    Copy SQL
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={openSupabaseSQL}
+                    className="gap-2"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Open Supabase SQL Editor
+                  </Button>
+                </div>
+                <p className="text-xs text-blue-700">
+                  After running this SQL, click "Refresh" above to continue with migrations.
+                </p>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {pendingCount > 0 && !isFirstTimeSetup && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
