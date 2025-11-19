@@ -22,8 +22,25 @@ serve(async (req) => {
       .from('schema_migrations')
       .select('version');
 
-    if (migrationsError && migrationsError.code !== 'PGRST116') {
+    // Handle case where schema_migrations table doesn't exist
+    // PGRST116 = not found, PGRST205 = table not in schema cache
+    if (migrationsError && migrationsError.code !== 'PGRST116' && migrationsError.code !== 'PGRST205') {
+      console.error('Error checking migrations:', migrationsError);
       throw migrationsError;
+    }
+    
+    // If table doesn't exist, return message indicating migrations aren't tracked
+    if (migrationsError && migrationsError.code === 'PGRST205') {
+      console.log('schema_migrations table does not exist - migrations are not being tracked');
+      return new Response(
+        JSON.stringify({ 
+          error: 'schema_migrations table does not exist',
+          message: 'Migrations are managed by Supabase and applied automatically. No manual tracking needed.',
+          pendingMigrations: [],
+          appliedMigrations: []
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const appliedVersions = new Set(
