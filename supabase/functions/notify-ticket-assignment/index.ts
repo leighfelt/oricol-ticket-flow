@@ -8,6 +8,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+/**
+ * Escape HTML special characters to prevent XSS attacks
+ * @param text - The text to escape
+ * @returns HTML-safe string
+ */
+function escapeHtml(text: string | undefined): string {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 interface NotificationRequest {
   assigneeEmail: string;
   assigneeName: string;
@@ -38,6 +53,23 @@ serve(async (req) => {
       userEmail,
     }: NotificationRequest = await req.json();
 
+    // Validate required fields
+    if (!assigneeEmail || !ticketId || !ticketTitle) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: assigneeEmail, ticketId, and ticketTitle are required" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(assigneeEmail)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email format for assigneeEmail" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const priorityColors: Record<string, string> = {
       low: "#22c55e",
       medium: "#f59e0b",
@@ -45,10 +77,16 @@ serve(async (req) => {
       urgent: "#dc2626",
     };
 
+    // Sanitize priority to prevent injection
+    const validPriorities = ["low", "medium", "high", "urgent"];
+    const sanitizedPriority = validPriorities.includes(priority?.toLowerCase()) 
+      ? priority.toLowerCase() 
+      : "medium";
+
     const emailResponse = await resend.emails.send({
       from: "Oricol Helpdesk <onboarding@resend.dev>",
       to: [assigneeEmail],
-      subject: `New Ticket Assigned: ${ticketTitle}`,
+      subject: `New Ticket Assigned: ${escapeHtml(ticketTitle)}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -64,39 +102,39 @@ serve(async (req) => {
 
             <div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 20px;">
               <div style="margin-bottom: 16px;">
-                <span style="display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; background-color: ${priorityColors[priority] || "#94a3b8"}; color: white;">
-                  ${priority} Priority
+                <span style="display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; background-color: ${priorityColors[sanitizedPriority]}; color: white;">
+                  ${escapeHtml(sanitizedPriority)} Priority
                 </span>
               </div>
 
-              <h2 style="color: #1a1a1a; margin: 0 0 12px 0; font-size: 20px;">${ticketTitle}</h2>
-              <p style="color: #666; margin: 0 0 20px 0; white-space: pre-wrap;">${ticketDescription}</p>
+              <h2 style="color: #1a1a1a; margin: 0 0 12px 0; font-size: 20px;">${escapeHtml(ticketTitle)}</h2>
+              <p style="color: #666; margin: 0 0 20px 0; white-space: pre-wrap;">${escapeHtml(ticketDescription)}</p>
 
               <div style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px;">
                 ${branch ? `
                   <div style="margin-bottom: 12px;">
                     <strong style="color: #1a1a1a; font-size: 14px;">Branch:</strong>
-                    <span style="color: #666; font-size: 14px; margin-left: 8px;">${branch}</span>
+                    <span style="color: #666; font-size: 14px; margin-left: 8px;">${escapeHtml(branch)}</span>
                   </div>
                 ` : ""}
                 
                 ${faultType ? `
                   <div style="margin-bottom: 12px;">
                     <strong style="color: #1a1a1a; font-size: 14px;">Fault Type:</strong>
-                    <span style="color: #666; font-size: 14px; margin-left: 8px;">${faultType}</span>
+                    <span style="color: #666; font-size: 14px; margin-left: 8px;">${escapeHtml(faultType)}</span>
                   </div>
                 ` : ""}
 
                 ${userEmail ? `
                   <div style="margin-bottom: 12px;">
                     <strong style="color: #1a1a1a; font-size: 14px;">Reported By:</strong>
-                    <span style="color: #666; font-size: 14px; margin-left: 8px;">${userEmail}</span>
+                    <span style="color: #666; font-size: 14px; margin-left: 8px;">${escapeHtml(userEmail)}</span>
                   </div>
                 ` : ""}
 
                 <div style="margin-bottom: 12px;">
                   <strong style="color: #1a1a1a; font-size: 14px;">Ticket ID:</strong>
-                  <span style="color: #666; font-size: 14px; margin-left: 8px; font-family: monospace;">${ticketId.slice(0, 8)}</span>
+                  <span style="color: #666; font-size: 14px; margin-left: 8px; font-family: monospace;">${escapeHtml(ticketId.slice(0, 8))}</span>
                 </div>
               </div>
             </div>

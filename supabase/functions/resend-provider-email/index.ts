@@ -26,6 +26,22 @@ const handler = async (req: Request): Promise<Response> => {
     const { emailLogId }: ResendEmailRequest = await req.json();
     console.log("Resending email for log ID:", emailLogId);
 
+    // Validate emailLogId is provided and is a valid UUID
+    if (!emailLogId) {
+      return new Response(
+        JSON.stringify({ error: "Email log ID is required" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(emailLogId)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email log ID format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Fetch email log
     const { data: emailLog, error: fetchError } = await supabase
       .from("provider_emails")
