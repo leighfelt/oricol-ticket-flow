@@ -6,52 +6,58 @@ A modern, professional helpdesk and asset management system built with React, Ty
 
 ## 🚀 Working with this project
 
-**This app runs on Lovable** - All code changes sync automatically between GitHub and Lovable.
+**This app runs on GitHub + Supabase** - A modern, independent tech stack:
+- **GitHub**: Version control, CI/CD, and collaborative development
+- **Supabase**: Backend database, authentication, and storage
+- **Deployment**: Multiple free hosting options (Netlify, Vercel, GitHub Pages, Cloudflare)
 
-### 🎯 New to Lovable? Start Here!
-- **⭐ [LOVABLE_START_HERE.md](./LOVABLE_START_HERE.md)** - **Complete guide for Lovable users**
-- **⭐ [LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** - **How to edit SQL without CLI**
-- **⭐ [LOVABLE_SQL_CHEATSHEET.md](./LOVABLE_SQL_CHEATSHEET.md)** - **Quick reference**
-- **⭐ [LOVABLE_SQL_FAQ.md](./LOVABLE_SQL_FAQ.md)** - **Frequently asked questions**
+### 🎯 Quick Start
+
+**⭐ [QUICKSTART_GITHUB_SUPABASE.md](./QUICKSTART_GITHUB_SUPABASE.md)** - **5-minute setup guide**  
+**⭐ [GITHUB_SUPABASE_DEPLOYMENT.md](./GITHUB_SUPABASE_DEPLOYMENT.md)** - **Complete deployment guide**  
+**⭐ [IFRAME_SETUP.md](./IFRAME_SETUP.md)** - **Embed app as iframe on your website**
+
+Choose your setup path:
+1. **Local Development** - Run everything on your computer (100% free)
+2. **Cloud Deployment** - Deploy to production using free tiers
+3. **Custom Setup** - Advanced configuration options
 
 ### Making Changes:
-1. **Edit code on GitHub** - Make changes here and commit them
-2. **Lovable syncs automatically** - Your changes appear in Lovable
-3. **App updates live** - The app running on Lovable updates with your changes
-4. **Apply database changes** - See [LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md) (no CLI needed!)
+1. **Clone or fork the repository** - Get a copy on your GitHub account
+2. **Make code changes** - Edit locally or on GitHub
+3. **Push to GitHub** - Changes are committed to your repository
+4. **Automatic deployment** - GitHub Actions builds and deploys your app
+5. **Apply database changes** - Use Supabase CLI or SQL Editor
 
 ### 🔄 Database Migrations (Important!)
 
-**Working on Lovable without CLI access? (Most users)**
-- **⭐ [LOVABLE_MIGRATION_GUIDE.md](./LOVABLE_MIGRATION_GUIDE.md)** - **How to run migrations on Lovable (copy & overwrite)**
-- **⭐ [LOVABLE_START_HERE.md](./LOVABLE_START_HERE.md)** - **START HERE!**
-- **⭐ [LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** - **Complete guide (no CLI needed)**
-- **⭐ [LOVABLE_SQL_CHEATSHEET.md](./LOVABLE_SQL_CHEATSHEET.md)** - **Quick reference**
-
-**Have CLI access?**
-When pulling code from GitHub that includes database changes:
+**Using Supabase CLI** (Recommended):
 ```bash
-npm run migrate
+# Install Supabase CLI
+npm install -g supabase
+
+# Link to your project
+npx supabase link --project-ref YOUR_PROJECT_REF
+
+# Apply migrations
+npx supabase db push
 ```
 
-**Database Detection & Diagnostics**:
-- **⭐ [DATABASE_DETECTION_GUIDE.md](./DATABASE_DETECTION_GUIDE.md)** - **Comprehensive 8-step detection guide**
-- **⭐ [DB_DETECTION_QUICK_REFERENCE.md](./DB_DETECTION_QUICK_REFERENCE.md)** - **Quick reference card**
-- Run automated diagnostic: `npm run detect:db`
-- Detection query files in `db/detection-queries/`
+**Without CLI** (Manual):
+1. Go to your Supabase project dashboard
+2. Click **SQL Editor**
+3. Run migration files from `supabase/migrations/` in chronological order
 
 **All Documentation**:
-- **[LOVABLE_MIGRATION_GUIDE.md](./LOVABLE_MIGRATION_GUIDE.md)** - Run migrations on Lovable (copy & overwrite method)
-- **[LOVABLE_START_HERE.md](./LOVABLE_START_HERE.md)** - Start here for Lovable users
-- **[LOVABLE_SQL_EDITING_GUIDE.md](./LOVABLE_SQL_EDITING_GUIDE.md)** - Edit SQL on Lovable (no CLI)
-- **[LOVABLE_SQL_CHEATSHEET.md](./LOVABLE_SQL_CHEATSHEET.md)** - Quick reference cheat sheet
-- **[LOVABLE_SQL_FAQ.md](./LOVABLE_SQL_FAQ.md)** - Frequently asked questions
+- **⭐ [GITHUB_SUPABASE_DEPLOYMENT.md](./GITHUB_SUPABASE_DEPLOYMENT.md)** - **Complete deployment guide**
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Free hosting options
+- **[SUPABASE_MIGRATIONS.md](./SUPABASE_MIGRATIONS.md)** - Complete migration guide
 - **[DATABASE_DETECTION_GUIDE.md](./DATABASE_DETECTION_GUIDE.md)** - Database detection guide
 - **[MIGRATION_QUICKSTART.md](./MIGRATION_QUICKSTART.md)** - Quick start guide
 - **[MIGRATION_CHEATSHEET.md](./MIGRATION_CHEATSHEET.md)** - Command reference
-- **[SUPABASE_MIGRATIONS.md](./SUPABASE_MIGRATIONS.md)** - Complete migration guide
 
 ### Additional Setup Options:
+- **⭐ GitHub + Supabase Setup** - See [GITHUB_SUPABASE_DEPLOYMENT.md](./GITHUB_SUPABASE_DEPLOYMENT.md)
 - **Local Development** (optional) - See [LOCAL_SETUP.md](./LOCAL_SETUP.md)
 - **Alternative Deployment** (optional) - See [DEPLOYMENT.md](./DEPLOYMENT.md)
 - **Quick Reference** - See [QUICKSTART.md](./QUICKSTART.md)
@@ -109,7 +115,9 @@ npm run migrate
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/c75c70a7-c13d-4879-a8af-bbb8cc076141
+**Repository**: https://github.com/craigfelt/oricol-ticket-flow-4084ab4c
+
+This is an independent application that can be deployed to any hosting platform.
 
 ## Getting Started
 
@@ -264,29 +272,19 @@ If you encounter storage-related errors when uploading files:
 
 There are several ways of editing your application.
 
-**Use Lovable**
+**Use your preferred IDE locally**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c75c70a7-c13d-4879-a8af-bbb8cc076141) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+Clone the repository and make changes locally:
 
 ```sh
 # Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+git clone https://github.com/craigfelt/oricol-ticket-flow-4084ab4c.git
 
 # Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+cd oricol-ticket-flow-4084ab4c
 
 # Step 3: Install the necessary dependencies.
-npm i
+npm install
 
 # Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
@@ -450,27 +448,22 @@ For support, please create a ticket in the system or contact the development tea
 You can deploy this app **completely free** using various hosting platforms:
 
 #### Backend Options (Database + API)
-- **Supabase Free Tier** - 500MB database, unlimited API requests ([guide](./DEPLOYMENT.md#option-1-free-supabase-tier-recommended-for-beginners))
-- **Railway.app Free Tier** - 500 hours/month, PostgreSQL included ([guide](./DEPLOYMENT.md#railwayapp-free-tier))
-- **Render.com Free Tier** - Free PostgreSQL + web service ([guide](./DEPLOYMENT.md#rendercom-free-tier))
-- **Local Supabase on Docker** - 100% free, self-hosted ([guide](./LOCAL_SETUP.md))
+- **Supabase Free Tier** - 500MB database, unlimited API requests
+- **Local Supabase on Docker** - 100% free, self-hosted
 
 #### Frontend Options
-- **Netlify** - 100GB bandwidth/month ([guide](./DEPLOYMENT.md#1-netlify-free-tier))
-- **Vercel** - 100GB bandwidth/month ([guide](./DEPLOYMENT.md#2-vercel-free-tier---no-premium-required))
-- **Cloudflare Pages** - Unlimited bandwidth ([guide](./DEPLOYMENT.md#4-cloudflare-pages-free))
-- **GitHub Pages** - Free static hosting ([guide](./DEPLOYMENT.md#1-github-pages-static-hosting))
+- **GitHub Pages** - Built-in GitHub hosting
+- **Netlify** - 100GB bandwidth/month
+- **Vercel** - 100GB bandwidth/month
+- **Cloudflare Pages** - Unlimited bandwidth
 
-**See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment instructions.**
+**See [GITHUB_SUPABASE_DEPLOYMENT.md](./GITHUB_SUPABASE_DEPLOYMENT.md) for complete deployment instructions.**
 
-### How can I deploy this project via Lovable?
+### Continuous Deployment with GitHub Actions
 
-Simply open [Lovable](https://lovable.dev/projects/c75c70a7-c13d-4879-a8af-bbb8cc076141) and click on Share -> Publish.
+The repository includes automated workflows for:
+- **CI/CD**: Automatic builds and tests on every push
+- **GitHub Pages**: Automatic deployment to GitHub Pages
+- **Netlify**: Automatic deployment to Netlify (requires secrets)
 
-### Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+See `.github/workflows/` for workflow configurations.

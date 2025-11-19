@@ -1,0 +1,25 @@
+# Netlify Configuration for SPA and Iframe Support
+
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    # Change yourdomain.com to your actual domain that will embed this app
+    Content-Security-Policy = "frame-ancestors 'self' https://yourdomain.com https://www.yourdomain.com"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "origin-when-cross-origin"
+    Permissions-Policy = "camera=*, microphone=*, clipboard-write=*"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
