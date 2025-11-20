@@ -876,59 +876,30 @@ export type Database = {
       }
       profiles: {
         Row: {
-          branch_id: string | null
           created_at: string
-          device_serial_number: string | null
           email: string | null
           full_name: string | null
           id: string
-          rdp_password: string | null
-          rdp_username: string | null
-          role: string | null
           updated_at: string
           user_id: string
-          vpn_password: string | null
-          vpn_username: string | null
         }
         Insert: {
-          branch_id?: string | null
           created_at?: string
-          device_serial_number?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
-          rdp_password?: string | null
-          rdp_username?: string | null
-          role?: string | null
           updated_at?: string
           user_id: string
-          vpn_password?: string | null
-          vpn_username?: string | null
         }
         Update: {
-          branch_id?: string | null
           created_at?: string
-          device_serial_number?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
-          rdp_password?: string | null
-          rdp_username?: string | null
-          role?: string | null
           updated_at?: string
           user_id?: string
-          vpn_password?: string | null
-          vpn_username?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       provider_emails: {
         Row: {

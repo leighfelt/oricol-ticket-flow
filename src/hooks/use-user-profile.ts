@@ -8,8 +8,6 @@ export interface UserProfile {
   user_id: string;
   email: string;
   full_name: string;
-  device_serial_number?: string;
-  branch_id?: string;
 }
 
 /**
@@ -48,7 +46,7 @@ export const useUserProfile = () => {
       // Try to fetch existing profile
       const { data, error: profileError } = await supabase
         .from('profiles')
-        .select('id, user_id, email, full_name, device_serial_number, branch_id')
+        .select('id, user_id, email, full_name')
         .eq('user_id', userId)
         .single();
 
@@ -78,7 +76,7 @@ export const useUserProfile = () => {
         // Retry fetching the profile
         const { data: newData, error: retryError } = await supabase
           .from('profiles')
-          .select('id, user_id, email, full_name, device_serial_number, branch_id')
+          .select('id, user_id, email, full_name')
           .eq('user_id', userId)
           .single();
 
