@@ -76,6 +76,7 @@ const Users = () => {
   const [editingSystemUser, setEditingSystemUser] = useState(false);
   const [editFullName, setEditFullName] = useState("");
   const [editRoles, setEditRoles] = useState<string[]>([]);
+  const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
 
   useEffect(() => {
     checkAccess();
@@ -90,6 +91,15 @@ const Users = () => {
       navigate("/auth");
       return;
     }
+
+    // Check if current user is admin
+    const { data: rolesData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .eq("role", "admin");
+
+    setIsCurrentUserAdmin(!!rolesData && rolesData.length > 0);
   };
 
   const fetchUsers = async () => {
@@ -790,14 +800,16 @@ const Users = () => {
                           >
                             Edit User
                           </Button>
-                          <Button 
-                            onClick={() => handleResetPassword(selectedUser)}
-                            variant="outline"
-                            className="w-full"
-                          >
-                            <Key className="mr-2 h-4 w-4" />
-                            Reset Password
-                          </Button>
+                          {isCurrentUserAdmin && (
+                            <Button 
+                              onClick={() => handleResetPassword(selectedUser)}
+                              variant="outline"
+                              className="w-full"
+                            >
+                              <Key className="mr-2 h-4 w-4" />
+                              Reset Password
+                            </Button>
+                          )}
                         </div>
                       </>
                     ) : (
