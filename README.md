@@ -19,14 +19,16 @@ The app was migrated from Lovable to an independent stack in November 2025. See 
 
 ### 🎯 Quick Start
 
+**⭐ NEW: [Auto Installer](./INSTALLER_README.md)** - **One-click installation to local `lpc` folder!**  
 **⭐ [QUICKSTART_GITHUB_SUPABASE.md](./QUICKSTART_GITHUB_SUPABASE.md)** - **5-minute setup guide**  
 **⭐ [GITHUB_SUPABASE_DEPLOYMENT.md](./GITHUB_SUPABASE_DEPLOYMENT.md)** - **Complete deployment guide**  
 **⭐ [IFRAME_SETUP.md](./IFRAME_SETUP.md)** - **Embed app as iframe on your website**
 
 Choose your setup path:
-1. **Local Development** - Run everything on your computer (100% free)
-2. **Cloud Deployment** - Deploy to production using free tiers
-3. **Custom Setup** - Advanced configuration options
+1. **Auto Installer** - Automated setup to local `lpc` folder (Recommended for first-time users)
+2. **Local Development** - Run everything on your computer (100% free)
+3. **Cloud Deployment** - Deploy to production using free tiers
+4. **Custom Setup** - Advanced configuration options
 
 ### Making Changes:
 1. **Clone or fork the repository** - Get a copy on your GitHub account
@@ -150,12 +152,19 @@ This is an independent application that can be deployed to any hosting platform.
 
 **Choose your setup:**
 
-1. **💰 $0 Cost - Local Development** (Recommended for testing)
+1. **🚀 Auto Installer** (⭐ Recommended for first-time users)
+   - One-click automated installation
+   - Clones repository to local `lpc` folder
+   - Automatically installs all dependencies
+   - See [INSTALLER_README.md](./INSTALLER_README.md) for details
+   - Download: [Windows](./install.ps1) | [Windows Batch](./install.bat) | [macOS/Linux](./install.sh)
+
+2. **💰 $0 Cost - Local Development** (Recommended for testing)
    - Run 100% free on your computer
    - See [LOCAL_SETUP.md](./LOCAL_SETUP.md) for step-by-step guide
    - Uses Docker to run Supabase locally
 
-2. **☁️ $0 Cost - Cloud Free Tier** (Recommended for production)
+3. **☁️ $0 Cost - Cloud Free Tier** (Recommended for production)
    - Use Supabase free tier (500MB database, no credit card required)
    - See [DEPLOYMENT.md](./DEPLOYMENT.md) for all free hosting options
    - Deploy to Netlify, Vercel, or Cloudflare Pages (all free)
@@ -164,6 +173,37 @@ This is an independent application that can be deployed to any hosting platform.
 - Node.js 18+ and npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 - **For local development**: [Docker Desktop](https://www.docker.com/products/docker-desktop) (free)
 - **For cloud development**: Free Supabase account at [supabase.com](https://supabase.com)
+
+### 🚀 Auto Installer (New!)
+
+The easiest way to get started! Download and run the installer for your operating system:
+
+**Windows (PowerShell):**
+```powershell
+# Download and run
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/craigfelt/oricol-ticket-flow-c5475242/main/install.ps1" -OutFile "install.ps1"
+.\install.ps1
+```
+
+**Windows (Batch):**
+- Download `install.bat` and double-click to run
+
+**macOS/Linux:**
+```bash
+# Download and run
+curl -O https://raw.githubusercontent.com/craigfelt/oricol-ticket-flow-c5475242/main/install.sh
+chmod +x install.sh
+./install.sh
+```
+
+**What it does:**
+- ✅ Checks for Git, Node.js, and npm
+- ✅ Clones repository to local `lpc` folder
+- ✅ Installs all dependencies automatically
+- ✅ Creates `.env` configuration file
+- ✅ Provides clear next steps
+
+See [INSTALLER_README.md](./INSTALLER_README.md) for detailed documentation.
 
 ### Quick Installation (Cloud - Supabase Free Tier)
 
