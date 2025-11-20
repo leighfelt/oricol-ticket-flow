@@ -73,30 +73,44 @@ export const UserProfilesSection = () => {
 
       setUserProfiles(profiles as any || []);
 
-      // Fetch storage info for each user
-      if (profiles) {
-        const storageMap = new Map<string, UserStorageInfo>();
-        
-        for (const profile of profiles) {
-          const { data: docs, error: docsError } = await supabase
-            .from("documents")
-            .select("file_size, created_at")
-            .eq("uploaded_by", profile.user_id);
+      // Fetch all documents in a single query (optimized for performance)
+      if (profiles && profiles.length > 0) {
+        const { data: allDocs, error: docsError } = await supabase
+          .from("documents")
+          .select("uploaded_by, file_size, created_at")
+          .order("created_at", { ascending: false });
 
-          if (!docsError && docs) {
-            const totalSize = docs.reduce((sum, doc) => sum + (doc.file_size || 0), 0) / (1024 * 1024); // Convert to MB
-            const lastUpload = docs.length > 0 ? docs[0].created_at : null;
-            
+        if (!docsError && allDocs) {
+          // Group documents by user and calculate aggregates
+          const storageMap = new Map<string, UserStorageInfo>();
+          
+          // Initialize storage info for all profiles
+          profiles.forEach(profile => {
             storageMap.set(profile.user_id, {
               user_id: profile.user_id,
-              total_storage_mb: totalSize,
-              document_count: docs.length,
-              last_upload: lastUpload,
+              total_storage_mb: 0,
+              document_count: 0,
+              last_upload: null,
             });
-          }
+          });
+          
+          // Aggregate document data for each user
+          allDocs.forEach(doc => {
+            if (doc.uploaded_by) {
+              const existing = storageMap.get(doc.uploaded_by);
+              if (existing) {
+                existing.total_storage_mb += (doc.file_size || 0) / (1024 * 1024); // Convert to MB
+                existing.document_count += 1;
+                // Keep the most recent upload date (docs are ordered by created_at desc)
+                if (!existing.last_upload && doc.created_at) {
+                  existing.last_upload = doc.created_at;
+                }
+              }
+            }
+          });
+          
+          setUserStorage(storageMap);
         }
-        
-        setUserStorage(storageMap);
       }
     } catch (error) {
       console.error("Error fetching user profiles:", error);
