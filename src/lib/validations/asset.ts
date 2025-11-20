@@ -10,33 +10,35 @@ export const assetSchema = z.object({
   asset_tag: z.string()
     .max(100, "Asset tag must be less than 100 characters")
     .optional()
-    .nullable(),
+    .or(z.literal("")),
   
   category: z.string()
     .max(100, "Category must be less than 100 characters")
     .optional()
-    .nullable(),
+    .or(z.literal("")),
   
   model: z.string()
     .max(200, "Model must be less than 200 characters")
     .optional()
-    .nullable(),
+    .or(z.literal("")),
   
   serial_number: z.string()
     .max(200, "Serial number must be less than 200 characters")
     .optional()
-    .nullable(),
+    .or(z.literal("")),
   
   status: assetStatusEnum.default("active"),
   
   location: z.string()
     .max(200, "Location must be less than 200 characters")
     .optional()
+    .or(z.literal(""))
     .nullable(),
   
   notes: z.string()
     .max(2000, "Notes must be less than 2000 characters")
     .optional()
+    .or(z.literal(""))
     .nullable(),
 });
 

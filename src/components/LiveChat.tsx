@@ -122,7 +122,7 @@ export const LiveChat = () => {
       return;
     }
 
-    const { error } = await supabase.from("chat_messages").insert(validationResult.data);
+    const { error } = await supabase.from("chat_messages").insert([validationResult.data]);
 
     if (error) {
       toast({
