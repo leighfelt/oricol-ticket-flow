@@ -8,15 +8,17 @@ export const chatMessageSchema = z.object({
   
   user_email: z.string()
     .email("Invalid email address")
+    .or(z.literal(""))
     .max(200, "Email must be less than 200 characters")
-    .optional()
-    .nullable(),
+    .transform(val => val || null)
+    .nullable()
+    .optional(),
   
   message: z.string()
     .min(1, "Message is required")
     .max(1000, "Message must be less than 1000 characters"),
   
-  is_support_reply: z.boolean().default(false),
+  is_support_reply: z.boolean().optional().default(false),
 });
 
 export type ChatMessageFormData = z.infer<typeof chatMessageSchema>;
