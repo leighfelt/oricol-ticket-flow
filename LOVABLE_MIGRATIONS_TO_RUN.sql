@@ -10,6 +10,19 @@
 -- 3. Copy and paste each section below
 -- 4. Execute each section in order
 -- =============================================================================
+--
+-- ⚠️  SECURITY WARNING - PLATFORM CREDENTIALS TABLE  ⚠️
+-- =============================================================================
+-- Migration 3 creates a `platform_credentials` table that stores passwords
+-- as PLAINTEXT. This is a development/demo configuration.
+--
+-- FOR PRODUCTION USE, you MUST implement one of:
+--   1. Application-level encryption before storing passwords
+--   2. pgcrypto extension for database-level encryption  
+--   3. Vault integration for secrets management (e.g., Supabase Vault)
+--
+-- DO NOT store sensitive production credentials without encryption!
+-- =============================================================================
 
 
 -- =============================================================================
