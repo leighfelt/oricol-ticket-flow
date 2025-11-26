@@ -667,9 +667,9 @@ export const ThemeCustomizer = () => {
                         ...theme,
                         sidebarBackground: preset.background,
                         sidebarForeground: preset.foreground,
-                        sidebarAccent: preset.background.replace(/(\d+)%\s*$/, (_, l) => `${Math.min(100, parseInt(l) + 10)}%`),
+                        sidebarAccent: preset.background.replace(/(\d+)%\s*$/, (_, l) => `${Math.min(100, parseInt(l, 10) + 10)}%`),
                         sidebarAccentForeground: preset.foreground,
-                        sidebarBorder: preset.background.replace(/(\d+)%\s*$/, (_, l) => `${Math.min(100, parseInt(l) + 10)}%`),
+                        sidebarBorder: preset.background.replace(/(\d+)%\s*$/, (_, l) => `${Math.min(100, parseInt(l, 10) + 10)}%`),
                       })}
                       className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all hover:shadow-md ${
                         theme.sidebarBackground === preset.background
