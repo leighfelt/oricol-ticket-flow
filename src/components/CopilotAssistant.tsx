@@ -462,11 +462,3 @@ export const CopilotAssistant = ({
     </div>
   );
 };
-
-// Declare Speech Recognition types for TypeScript
-declare global {
-  interface Window {
-    SpeechRecognition: typeof SpeechRecognition;
-    webkitSpeechRecognition: typeof SpeechRecognition;
-  }
-}

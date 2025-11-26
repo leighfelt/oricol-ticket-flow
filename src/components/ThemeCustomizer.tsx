@@ -86,9 +86,13 @@ const hslToHex = (hsl: string): string => {
   const parts = hsl.trim().split(/\s+/);
   if (parts.length < 3) return '#000000';
   
-  const h = parseFloat(parts[0]) || 0;
-  const s = parseFloat(parts[1]) / 100 || 0;
-  const l = parseFloat(parts[2]) / 100 || 0;
+  const hValue = parseFloat(parts[0]);
+  const sValue = parseFloat(parts[1]);
+  const lValue = parseFloat(parts[2]);
+  
+  const h = isNaN(hValue) ? 0 : hValue;
+  const s = isNaN(sValue) ? 0 : sValue / 100;
+  const l = isNaN(lValue) ? 0 : lValue / 100;
   
   const c = (1 - Math.abs(2 * l - 1)) * s;
   const x = c * (1 - Math.abs((h / 60) % 2 - 1));

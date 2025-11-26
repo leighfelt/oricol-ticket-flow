@@ -166,17 +166,26 @@ export const NetworkDataImporter = ({ onDataImported, targetPage }: NetworkDataI
     };
   };
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-
-    const validTypes = [
+  // Helper function to validate file type
+  const isValidDocumentFile = (file: File): boolean => {
+    const validMimeTypes = [
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/msword',
       'text/plain',
     ];
+    const validExtensions = ['.docx', '.doc', '.txt'];
     
-    if (!validTypes.includes(selectedFile.type) && !selectedFile.name.endsWith('.docx') && !selectedFile.name.endsWith('.doc')) {
+    const hasValidMimeType = validMimeTypes.includes(file.type);
+    const hasValidExtension = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+    
+    return hasValidMimeType || hasValidExtension;
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+
+    if (!isValidDocumentFile(selectedFile)) {
       toast.error("Please upload a Word document (.docx, .doc) or text file (.txt)");
       return;
     }
@@ -229,7 +238,7 @@ export const NetworkDataImporter = ({ onDataImported, targetPage }: NetworkDataI
       // Save extracted data to appropriate tables
       if (extractedData.servers.length > 0 && targetPage === 'nymbis-cloud') {
         // For Nymbis Cloud, save to cloud_networks or a related table
-        const { error } = await (supabase as unknown as { from: (table: string) => { insert: (data: unknown[]) => { select: () => Promise<{ error: Error | null }> } } })
+        const { error } = await (supabase as any)
           .from("cloud_networks")
           .insert([{
             name: `Imported Network - ${new Date().toLocaleDateString()}`,
@@ -252,9 +261,9 @@ export const NetworkDataImporter = ({ onDataImported, targetPage }: NetworkDataI
           notes: `Imported from document`,
         }));
 
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("network_devices")
-          .insert(devices as never);
+          .insert(devices);
         
         if (error) throw error;
       }
