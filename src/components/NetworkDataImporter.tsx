@@ -54,8 +54,12 @@ interface NetworkDataImporterProps {
   targetPage: 'nymbis-cloud' | 'company-network';
 }
 
-// Initialize PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Initialize PDF.js worker using local file
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+
+// Constants for image extraction
+const MIN_DIAGRAM_WIDTH = 100;
+const MIN_DIAGRAM_HEIGHT = 100;
 
 // Type for PDF.js text content item
 interface PdfTextItem {
@@ -242,8 +246,8 @@ export const NetworkDataImporter = ({ onDataImported, targetPage }: NetworkDataI
           viewport: viewport
         }).promise;
         
-        // Only save pages that might contain diagrams (based on size or content)
-        if (canvas.width > 100 && canvas.height > 100) {
+        // Only save pages that might contain diagrams (based on minimum size)
+        if (canvas.width > MIN_DIAGRAM_WIDTH && canvas.height > MIN_DIAGRAM_HEIGHT) {
           images.push({
             name: `Page ${i}`,
             dataUrl: canvas.toDataURL('image/png'),
@@ -265,6 +269,8 @@ export const NetworkDataImporter = ({ onDataImported, targetPage }: NetworkDataI
     const textResult = await mammoth.extractRawText({ arrayBuffer });
     
     // Extract images - mammoth can convert images to base64
+    // Note: mammoth doesn't provide image dimensions, so we set width/height to 0
+    // The images are still usable for display - the browser will render them at natural size
     const images: ExtractedNetworkData['extractedImages'] = [];
     
     try {
@@ -277,6 +283,7 @@ export const NetworkDataImporter = ({ onDataImported, targetPage }: NetworkDataI
             images.push({
               name: `Image ${images.length + 1}`,
               dataUrl,
+              // Width/height are unknown from mammoth - browser will use natural dimensions
               width: 0,
               height: 0
             });

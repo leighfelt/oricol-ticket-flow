@@ -22,7 +22,9 @@ import {
   FolderOpen,
   Settings,
   FolderTree,
-  TrendingUp
+  TrendingUp,
+  Waves,
+  Leaf
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -125,6 +127,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, requiredRoles: [] }, // Everyone
     { name: "Tickets", href: "/tickets", icon: Ticket, requiredRoles: ['admin'] }, // Admin only
     { name: "Oricol CRM", href: "/crm", icon: TrendingUp, requiredRoles: ['admin'] }, // Admin only
+    { name: "Bluewave CRM", href: "/bluewave-crm", icon: Waves, requiredRoles: ['admin'] }, // Admin only
+    { name: "Sage", href: "/sage", icon: Leaf, requiredRoles: ['admin'] }, // Admin only
     { name: "Remote Support", href: "/remote-support", icon: Video, requiredRoles: [] }, // Everyone
     { name: "Document Hub", href: "/document-hub", icon: FolderOpen, requiredRoles: ['admin'] }, // Admin only
     { name: "Shared Files", href: "/shared-files", icon: FolderTree, requiredRoles: ['admin'] }, // Admin only

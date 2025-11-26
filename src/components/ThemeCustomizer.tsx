@@ -13,6 +13,10 @@ import { Palette, Type, Image as ImageIcon, Upload, RotateCcw, Sun, Moon, PanelL
 import { supabase } from "@/integrations/supabase/client";
 import { THEME_STORAGE_KEY, defaultThemeSettings, ThemeSettings, LogoPosition, LogoLayout } from "@/lib/theme-constants";
 
+// Logo preview size constants
+const MAX_LOGO_PREVIEW_HEIGHT = 100; // Maximum height in logo settings preview
+const MAX_LIVE_PREVIEW_HEIGHT = 60; // Maximum height in live preview section
+
 // Predefined color themes with HSL values
 const colorThemes = {
   warm: {
@@ -195,6 +199,8 @@ const defaultNavItems = [
   { name: "Dashboard", href: "/dashboard" },
   { name: "Tickets", href: "/tickets" },
   { name: "Oricol CRM", href: "/crm" },
+  { name: "Bluewave CRM", href: "/bluewave-crm" },
+  { name: "Sage", href: "/sage" },
   { name: "Remote Support", href: "/remote-support" },
   { name: "Document Hub", href: "/document-hub" },
   { name: "Shared Files", href: "/shared-files" },
@@ -1192,7 +1198,7 @@ export const ThemeCustomizer = () => {
                   <img 
                     src={theme.logoUrl} 
                     alt="Primary Logo" 
-                    style={{ height: `${Math.min(theme.logoSize, 100)}px` }}
+                    style={{ height: `${Math.min(theme.logoSize, MAX_LOGO_PREVIEW_HEIGHT)}px` }}
                     className="object-contain border rounded p-2 max-w-[200px]"
                   />
                 )}
@@ -1283,7 +1289,7 @@ export const ThemeCustomizer = () => {
                   <img 
                     src={theme.secondaryLogoUrl} 
                     alt="Secondary Logo" 
-                    style={{ height: `${Math.min(theme.secondaryLogoSize, 100)}px` }}
+                    style={{ height: `${Math.min(theme.secondaryLogoSize, MAX_LOGO_PREVIEW_HEIGHT)}px` }}
                     className="object-contain border rounded p-2 max-w-[200px]"
                   />
                 )}
@@ -1371,7 +1377,7 @@ export const ThemeCustomizer = () => {
                     <img 
                       src={theme.logoUrl} 
                       alt="Primary Logo Preview" 
-                      style={{ height: `${Math.min(theme.logoSize, 60)}px` }}
+                      style={{ height: `${Math.min(theme.logoSize, MAX_LIVE_PREVIEW_HEIGHT)}px` }}
                       className="object-contain"
                     />
                   )}
@@ -1379,7 +1385,7 @@ export const ThemeCustomizer = () => {
                     <img 
                       src={theme.secondaryLogoUrl} 
                       alt="Secondary Logo Preview" 
-                      style={{ height: `${Math.min(theme.secondaryLogoSize, 60)}px` }}
+                      style={{ height: `${Math.min(theme.secondaryLogoSize, MAX_LIVE_PREVIEW_HEIGHT)}px` }}
                       className="object-contain"
                     />
                   )}
