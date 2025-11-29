@@ -236,5 +236,5 @@ After completing this setup:
 
 ---
 
-**Last Updated**: November 2025
+**Last Updated**: 2025
 **Status**: Ready to use after secrets are configured

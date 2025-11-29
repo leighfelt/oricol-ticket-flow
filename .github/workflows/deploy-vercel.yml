@@ -18,7 +18,16 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Wait for migrations to complete if they're running
+    
+    permissions:
+      contents: read
+      pull-requests: write
+    
+    # This job runs when:
+    # 1. Pushed directly to main (not via workflow_run)
+    # 2. PR opened/updated (not via workflow_run)  
+    # 3. Manually triggered (not via workflow_run)
+    # 4. After migrations workflow completes successfully (workflow_run)
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     
     steps:
