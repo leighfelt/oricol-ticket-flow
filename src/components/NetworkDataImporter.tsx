@@ -255,7 +255,8 @@ export const NetworkDataImporter = ({ onDataImported, targetPage }: NetworkDataI
         
         await page.render({
           canvasContext: context,
-          viewport: viewport
+          viewport: viewport,
+          canvas: canvas
         }).promise;
         
         // Only save pages that might contain diagrams (based on minimum size)
