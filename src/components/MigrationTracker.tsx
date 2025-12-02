@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { CheckCircle2, XCircle, Clock, AlertCircle, RefreshCw, ChevronRight } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { toast } from 'sonner';
@@ -167,11 +168,12 @@ const MigrationTracker = () => {
       // Try to query the database
       const { error } = await testClient.from('profiles').select('count').limit(1);
       
-      if (error && error.code !== 'PGRST116') {
-        // PGRST116 = table doesn't exist, which is expected before migrations
-        if (error.code !== '42P01') {
-          throw error;
-        }
+      // Known error codes that indicate successful connection but missing tables
+      // PGRST116 = no rows found, 42P01 = table doesn't exist
+      const acceptableErrorCodes = ['PGRST116', '42P01'];
+      
+      if (error && !acceptableErrorCodes.includes(error.code || '')) {
+        throw error;
       }
 
       updateStepStatus('validate_supabase', 'completed', 'Connection successful');
@@ -226,16 +228,14 @@ const MigrationTracker = () => {
     updateStepStatus(stepId, 'manual_required');
   };
 
-  const resetMigration = () => {
-    if (confirm('Are you sure you want to reset the migration progress? This cannot be undone.')) {
-      setSteps(MIGRATION_STEPS);
-      setConfig({});
-      setLogs([]);
-      localStorage.removeItem('migration_config');
-      localStorage.removeItem('migration_steps');
-      localStorage.removeItem('migration_logs');
-      toast.success('Migration progress reset');
-    }
+  const handleResetMigration = () => {
+    setSteps(MIGRATION_STEPS);
+    setConfig({});
+    setLogs([]);
+    localStorage.removeItem('migration_config');
+    localStorage.removeItem('migration_steps');
+    localStorage.removeItem('migration_logs');
+    toast.success('Migration progress reset');
   };
 
   const exportConfig = () => {
@@ -270,9 +270,27 @@ const MigrationTracker = () => {
               <Button variant="outline" size="sm" onClick={exportConfig}>
                 Export Progress
               </Button>
-              <Button variant="destructive" size="sm" onClick={resetMigration}>
-                Reset
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    Reset
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reset Migration Progress?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to reset the migration progress? This will clear all saved configuration, step progress, and logs. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleResetMigration}>
+                      Reset
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </CardHeader>
