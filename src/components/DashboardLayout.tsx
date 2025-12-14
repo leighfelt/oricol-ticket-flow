@@ -8,6 +8,7 @@ import {
   Menu, 
   X, 
   Users, 
+  UserCheck,
   FileBarChart, 
   Monitor, 
   Code, 
@@ -150,7 +151,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { name: "Nymbis RDP Cloud", href: "/nymbis-rdp-cloud", icon: Cloud, requiredRoles: ['admin', 'ceo', 'support_staff'] },
     { name: "Company Network", href: "/company-network", icon: Network, requiredRoles: ['admin', 'ceo', 'support_staff'] },
     { name: "Reports", href: "/reports", icon: FileBarChart, requiredRoles: ['admin', 'ceo', 'support_staff'] },
-    { name: "Users", href: "/users", icon: Users, requiredRoles: ['admin'] }, // Admin only, not CEO
+    { name: "Users", href: "/users", icon: Users, requiredRoles: ['admin'] }, // Admin only - system login users
+    { name: "Staff", href: "/staff", icon: UserCheck, requiredRoles: ['admin', 'ceo', 'support_staff'] }, // Staff directory records
     { name: "Settings", href: "/settings", icon: Settings, requiredRoles: [] }, // Everyone
   ];
 
